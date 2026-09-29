@@ -1,0 +1,26 @@
+{
+  "plugins": {
+    "mason-lspconfig.nvim": {
+      "rev": "b3298993d55fa194279b5eb9dbfb3a43da65cadf",
+      "src": "https://github.com/mason-org/mason-lspconfig.nvim"
+    },
+    "mason.nvim": {
+      "rev": "2a6940af80375532e5e9e7c1f2fc6319a1b7a69d",
+      "src": "https://github.com/mason-org/mason.nvim"
+    },
+    "mini.notify": {
+      "rev": "821db7d464f7a9bb8666b4ba3be7d2ed637cfcfc",
+      "src": "https://github.com/nvim-mini/mini.notify",
+      "version": "'stable'"
+    },
+    "mini.pick": {
+      "rev": "8c1f75f8ddd8c9f75d07ed2ab5718d2c3cb65a66",
+      "src": "https://github.com/nvim-mini/mini.pick",
+      "version": "'stable'"
+    },
+    "nvim-lspconfig": {
+      "rev": "a9bb4d5f4276aa5cddc015faa3ecc5a7b5a26b14",
+      "src": "https://github.com/neovim/nvim-lspconfig"
+    }
+  }
+}
