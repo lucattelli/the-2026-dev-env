@@ -1,4 +1,4 @@
-# dotfiles
+# the-2026-dev-env
 
 Minimal configs for Neovim, tmux, mise and bash, plus the steps to set up
 a development machine from a fresh Debian 13 (trixie) install.
@@ -118,7 +118,7 @@ the user's home, independent of the system.
 Clone the repo:
 
 ```sh
-git clone git@github.com:<user>/dotfiles.git ~/dotfiles
+git clone git@github.com:lucattelli/the-2026-dev-env.git ~/the-2026-dev-env
 ```
 
 Install mise:
@@ -131,15 +131,15 @@ Link the configs. Move any existing ones out of the way first.
 
 ```sh
 mkdir -p ~/.config
-ln -s ~/dotfiles/nvim ~/.config/nvim
-ln -s ~/dotfiles/tmux ~/.config/tmux
-ln -s ~/dotfiles/mise ~/.config/mise
+ln -s ~/the-2026-dev-env/nvim ~/.config/nvim
+ln -s ~/the-2026-dev-env/tmux ~/.config/tmux
+ln -s ~/the-2026-dev-env/mise ~/.config/mise
 ```
 
 Load the bash snippet:
 
 ```sh
-echo '[ -f ~/dotfiles/bash/bashrc ] && . ~/dotfiles/bash/bashrc' >> ~/.bashrc
+echo '[ -f ~/the-2026-dev-env/bash/bashrc ] && . ~/the-2026-dev-env/bash/bashrc' >> ~/.bashrc
 ```
 
 Open a new shell and install the pinned tools:
