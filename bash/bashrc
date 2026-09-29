@@ -1,0 +1,19 @@
+# Loaded by ~/.bashrc
+
+export EDITOR=nvim VISUAL=nvim
+
+# mise
+if [ -x "$HOME/.local/bin/mise" ]; then
+    eval "$("$HOME/.local/bin/mise" activate bash)"
+fi
+
+# Debian renames
+command -v fdfind >/dev/null && alias fd=fdfind
+command -v batcat >/dev/null && alias bat=batcat
+
+# Energy profiles
+if command -v powerprofilesctl >/dev/null; then
+    alias perf='powerprofilesctl set performance'
+    alias bal='powerprofilesctl set balanced'
+    alias eco='powerprofilesctl set power-saver'
+fi
