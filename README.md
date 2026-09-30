@@ -1,13 +1,14 @@
-# the-2026-dev-env
+# dotfiles
 
-Minimal configs for Neovim, tmux, mise and bash, plus the steps to set up
-a development machine from a fresh Debian 13 (trixie) install.
+Minimal configs for Neovim, tmux, Alacritty, mise and bash, plus the steps
+to set up a development machine from a fresh Debian 13 (trixie) install.
 
 ```
-nvim/   Neovim 0.12+ config (native vim.pack, LSP via Mason)
-tmux/   tmux config, no plugin manager
-mise/   global tool versions (Neovim, Node, Go, ...)
-bash/   shell snippet sourced from ~/.bashrc
+nvim/        Neovim 0.12+ config (native vim.pack, LSP via Mason)
+tmux/        tmux config, no plugin manager
+alacritty/   terminal config
+mise/        global tool versions (Neovim, Node, Go, ...)
+bash/        shell snippet sourced from ~/.bashrc
 ```
 
 If you only want the configs on a machine that is already set up, skip to
@@ -134,6 +135,7 @@ mkdir -p ~/.config
 ln -s ~/the-2026-dev-env/nvim ~/.config/nvim
 ln -s ~/the-2026-dev-env/tmux ~/.config/tmux
 ln -s ~/the-2026-dev-env/mise ~/.config/mise
+ln -s ~/the-2026-dev-env/alacritty ~/.config/alacritty
 ```
 
 Load the bash snippet:
@@ -157,6 +159,27 @@ If tmux is already running, restart the server so every option applies:
 ```sh
 tmux kill-server
 ```
+
+### Terminal
+
+Install Alacritty and the font used by its config:
+
+```sh
+sudo apt install alacritty fonts-jetbrains-mono
+```
+
+Make it the default terminal:
+
+```sh
+sudo update-alternatives --config x-terminal-emulator
+```
+
+On LXQt, also set it in LXQt Configuration Center → Session Settings →
+Basic Settings → Terminal emulator, which is what the menu and the keyboard
+shortcut use.
+
+The config reloads on save. To always start inside tmux, uncomment the
+`[terminal.shell]` block in `alacritty/alacritty.toml`.
 
 ## 5. Docker
 
@@ -190,7 +213,45 @@ docker run hello-world
 
 Note: membership in the `docker` group is equivalent to root access.
 
-## 6. Hardware-specific (laptops)
+## 6. System snapshots
+
+On ext4, Timeshift works in rsync mode: it copies the system (not `/home`)
+and each new snapshot only stores the files that changed.
+
+```sh
+sudo apt install timeshift
+```
+
+Open Timeshift from the menu and go through the setup wizard:
+
+- **Type:** RSYNC.
+- **Location:** a partition on a different disk than the system, if there
+  is one. Snapshots on the same disk protect against a bad update, but not
+  against a dead drive. Timeshift creates a `timeshift` folder at the root
+  of the chosen partition.
+- **Schedule:** daily (keep 5) and weekly (keep 2). Leave "boot" off.
+- **Users:** keep `/home` excluded. Code lives in git, config in this repo.
+
+Close the wizard before using the command line, since only one instance can
+run at a time. Create the first snapshot and check it:
+
+```sh
+sudo timeshift --create --comments "new system configured"
+sudo timeshift --list
+```
+
+Take a manual snapshot before risky changes (drivers, backports packages,
+partitioning):
+
+```sh
+sudo timeshift --create --comments "before <change>"
+```
+
+To roll back, use the GUI or `sudo timeshift --restore`. If the system no
+longer boots, start a live USB, install Timeshift there and restore from
+the snapshot partition.
+
+## 7. Hardware-specific (laptops)
 
 ### NVIDIA GPU
 
@@ -246,5 +307,6 @@ The bash snippet adds the `perf`, `bal` and `eco` aliases.
 - Update Neovim plugins: `:lua vim.pack.update()`
 - Update tools within their pinned ranges: `mise upgrade`
 - Update uv and Rust: `uv self update`, `rustup update`
+- List system snapshots: `sudo timeshift --list`
 - Reload the Neovim config: `<leader>o`
 - Reload the tmux config: `prefix R`
