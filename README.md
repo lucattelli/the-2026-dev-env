@@ -343,6 +343,58 @@ powerprofilesctl list
 
 The bash snippet adds the `perf`, `bal` and `eco` aliases.
 
+### Hibernation
+
+Hibernation writes RAM to swap and powers off completely: no battery drain,
+but a slower resume than sleep. Take a Timeshift snapshot first. The worst
+case is losing the open session, not the system.
+
+Requirements:
+
+- A swap partition at least as large as RAM (`free -h`, `lsblk -f`).
+- Secure Boot disabled. With Secure Boot on, kernel lockdown blocks
+  hibernation.
+
+Check that the initramfs knows where to resume from. The UUID must match the
+swap partition in `lsblk -f`:
+
+```sh
+cat /etc/initramfs-tools/conf.d/resume
+```
+
+If the file is missing, create it with `RESUME=UUID=<swap-uuid>`.
+
+With the NVIDIA driver, video memory must be saved too, or the screen comes
+back black. Debian 13 mounts `/tmp` in RAM, so point the driver to a
+directory on disk:
+
+```sh
+echo "options nvidia NVreg_PreserveVideoMemoryAllocations=1 NVreg_TemporaryFilePath=/var/tmp" \
+  | sudo tee /etc/modprobe.d/nvidia-power.conf
+sudo update-initramfs -u
+```
+
+The `nvidia-hibernate` and `nvidia-resume` services ship with the driver and
+must be enabled (`systemctl list-unit-files | grep nvidia`).
+
+Reboot and check that the options are active (`1` and `"/var/tmp"`):
+
+```sh
+grep -E "PreserveVideoMemory|TemporaryFilePath" /proc/driver/nvidia/params
+```
+
+Save your work and test:
+
+```sh
+systemctl hibernate
+```
+
+If the session doesn't come back, reboot and look at the previous attempt:
+
+```sh
+journalctl -b -1 | grep -iE "PM:|hibernat|nvidia" | tail -40
+```
+
 ## Maintenance
 
 - Update the system: `sudo apt update && sudo apt full-upgrade`
