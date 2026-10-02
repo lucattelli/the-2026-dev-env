@@ -285,6 +285,48 @@ nvidia-smi
 Very recent GPUs (e.g. RTX 50 series) may need a newer driver from
 backports or NVIDIA's own repository.
 
+### GPU in containers
+
+Requires the NVIDIA driver above and Docker from step 5. Add NVIDIA's
+repository:
+
+```sh
+sudo curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey \
+  -o /etc/apt/keyrings/nvidia-container-toolkit.asc
+
+sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.sources <<EOT
+Types: deb
+URIs: https://nvidia.github.io/libnvidia-container/stable/deb/amd64
+Suites: /
+Signed-By: /etc/apt/keyrings/nvidia-container-toolkit.asc
+EOT
+```
+
+Install the toolkit and register it with Docker:
+
+```sh
+sudo apt update
+sudo apt install nvidia-container-toolkit
+sudo nvidia-ctk runtime configure --runtime=docker
+sudo systemctl restart docker
+```
+
+Check that a container sees the GPU (the process list is empty inside a
+container, which is expected):
+
+```sh
+docker run --rm --gpus all debian:trixie nvidia-smi
+```
+
+Example: run ollama with GPU acceleration. The `ollama` volume keeps the
+downloaded models when the container is removed.
+
+```sh
+docker run -d --gpus all --name ollama \
+  -v ollama:/root/.ollama -p 11434:11434 ollama/ollama
+docker exec -it ollama ollama run qwen2.5-coder:7b
+```
+
 ### Bluetooth
 
 ```sh
