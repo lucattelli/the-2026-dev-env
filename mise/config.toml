@@ -1,6 +1,8 @@
 [tools]
 delta = "latest"
+dust = "latest"
 gh = "latest"
+glow = "latest"
 go = "latest"
 hyperfine = "latest"
 lazydocker = "latest"
