@@ -1,5 +1,9 @@
 {
   "plugins": {
+    "llama.vim": {
+      "rev": "e1ca1cc6af9da73f4ae21f810f33909d515592e6",
+      "src": "https://github.com/ggml-org/llama.vim"
+    },
     "mason-lspconfig.nvim": {
       "rev": "b3298993d55fa194279b5eb9dbfb3a43da65cadf",
       "src": "https://github.com/mason-org/mason-lspconfig.nvim"

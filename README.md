@@ -8,7 +8,7 @@ plus the steps to set up a development machine from a fresh Debian 13
 nvim/        Neovim 0.12+ config (native vim.pack, LSP via Mason)
 tmux/        tmux config, no plugin manager
 alacritty/   terminal config
-mise/        global tool versions (Neovim, Node, Go, ...)
+mise/        global tool versions (Neovim, Node, Go, gh, delta, lazygit)
 bash/        shell snippet sourced from ~/.bashrc
 claude/      global CLAUDE.md and sandbox image for Claude Code
 bin/         helper scripts, added to PATH by the bash snippet
@@ -166,6 +166,26 @@ Open a new shell and install the pinned tools:
 ```sh
 mise install
 ```
+
+This also installs `gh`, `delta` and `lazygit`. Log in to the GitHub CLI
+(GitHub.com, SSH, skip the key upload since it is already registered, log in
+with a browser):
+
+```sh
+gh auth login
+```
+
+Use delta as git's pager:
+
+```sh
+git config --global core.pager delta
+git config --global interactive.diffFilter "delta --color-only"
+git config --global delta.navigate true
+git config --global merge.conflictStyle zdiff3
+```
+
+`lazygit` needs no setup. It is the review step for agent work: stage hunk by
+hunk (`enter`), commit (`c`, signed like any other commit), push (`P`).
 
 Open `nvim` once. It installs the plugins and the language servers
 (clangd, lua_ls, gopls). Restart it when done. Mason needs Go to build
@@ -402,6 +422,34 @@ docker run -d --gpus all --name ollama \
 docker exec -it ollama ollama run qwen2.5-coder:7b
 ```
 
+To start ollama with the system: `docker update --restart unless-stopped ollama`.
+
+### Local code completion (llama.vim)
+
+The Neovim config includes llama.vim, which shows inline completions from a
+local model served by llama.cpp. It is off when Neovim starts; run
+`:LlamaEnable` to turn it on. Machines without the server are unaffected.
+
+Run the server in a container:
+
+```sh
+docker run -d --gpus all --name llama-fim --restart unless-stopped \
+  -p 127.0.0.1:8012:8012 -v llama-cache:/root/.cache \
+  ghcr.io/ggml-org/llama.cpp:server-cuda \
+  --fim-qwen-1.5b-default --host 0.0.0.0
+```
+
+The preset downloads Qwen 2.5 Coder 1.5B, listens on port 8012 (the plugin's
+default endpoint) and loads the whole model on the GPU. The port is bound to
+localhost only, and the volume keeps the downloaded model.
+
+Once enabled, `Tab` accepts a suggestion and `Ctrl+F` toggles it manually;
+see `:help llama`.
+
+VRAM: on a 6 GB card the completion model (~2 GB) and a 7B ollama model
+(~5 GB) don't fit together. ollama frees its VRAM after a few idle minutes;
+stop the completion server (`docker stop llama-fim`) before heavy ollama use.
+
 ### Bluetooth
 
 ```sh
@@ -498,6 +546,7 @@ ends the graphical session.
 - Update Neovim plugins: `:lua vim.pack.update()`
 - Update tools within their pinned ranges: `mise upgrade`
 - Update uv and Rust: `uv self update`, `rustup update`
+- Update the llama.cpp image: `docker pull ghcr.io/ggml-org/llama.cpp:server-cuda`, then recreate the `llama-fim` container
 - List system snapshots: `sudo timeshift --list`
 - Reload the Neovim config: `<leader>o`
 - Reload the tmux config: `prefix R`

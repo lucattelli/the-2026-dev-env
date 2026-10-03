@@ -77,12 +77,15 @@ vim.o.updatetime = 250
 vim.o.winborder = "rounded"
 vim.o.wrap = false
 
+vim.g.llama_config = { enable_at_startup = false }
+
 vim.pack.add({
     { src = "https://github.com/neovim/nvim-lspconfig" }, -- mason-lspconfig dep
     { src = "https://github.com/mason-org/mason.nvim" },  -- mason-lspconfig dep
     { src = "https://github.com/mason-org/mason-lspconfig.nvim" },
     { src = "https://github.com/nvim-mini/mini.pick", version = "stable" },
     { src = "https://github.com/nvim-mini/mini.notify", version = "stable" },
+    { src = "https://github.com/ggml-org/llama.vim" },
 })
 require("mason").setup()
 require("mason-lspconfig").setup({
