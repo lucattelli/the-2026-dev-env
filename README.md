@@ -193,8 +193,9 @@ hunk (`enter`), commit (`c`, signed like any other commit), push (`P`).
 
 Also installed by `mise install`:
 
-- **starship**: prompt with git status and the project's tool versions. The
-  config in `starship/` uses the plain-text preset, so no Nerd Font is needed.
+- **starship**: one-line prompt with directory, git branch and status, the
+  project's language versions and the duration of slow commands. The config
+  in `starship/` uses plain-text symbols, so no Nerd Font is needed.
 - **zoxide**: `z <part of a path>` jumps to frequently used directories;
   `zi` picks one with fzf.
 - **tealdeer**: `tldr <command>` shows practical examples. Download the
