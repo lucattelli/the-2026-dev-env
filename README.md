@@ -10,7 +10,8 @@ tmux/        tmux config, no plugin manager
 alacritty/   terminal config
 mise/        global tool versions (Neovim, Node, Go, ...)
 bash/        shell snippet sourced from ~/.bashrc
-claude/      global CLAUDE.md for Claude Code
+claude/      global CLAUDE.md and sandbox image for Claude Code
+bin/         helper scripts, added to PATH by the bash snippet
 ```
 
 If you only want the configs on a machine that is already set up, skip to
@@ -146,7 +147,8 @@ Load the bash snippet:
 echo '[ -f ~/the-2026-dev-env/bash/bashrc ] && . ~/the-2026-dev-env/bash/bashrc' >> ~/.bashrc
 ```
 
-The snippet sets `EDITOR` to Neovim, activates mise, aliases `fd` and `bat`
+The snippet sets `EDITOR` to Neovim, puts the repo's `bin/` on `PATH`,
+activates mise, aliases `fd` and `bat`
 to their Debian names (`fdfind`, `batcat`) and adds the power profile
 aliases from step 7. It also loads the fzf key bindings, using `fd` as the
 file source so they respect `.gitignore`:
@@ -223,6 +225,36 @@ aliases are not available there; `CLAUDE.md` covers that.
 Workflow: run `claude` in a tmux pane next to Neovim (`prefix |` opens it in
 the same directory). Edits show up in Neovim through `autoread` and tmux's
 `focus-events`.
+
+### Claude Code sandbox
+
+`claude-sandbox` runs Claude Code without permission prompts inside a
+container that only sees the current directory. Requires Docker (step 5).
+
+```sh
+cd ~/code/my-project
+claude-sandbox            # extra args go to claude, e.g. --resume
+```
+
+- Mounted: the current directory at `/workspace` and `CLAUDE.md`
+  (read-only). Not mounted: SSH keys, `~/.gitconfig`, the Docker socket,
+  the rest of `$HOME`.
+- Files are created with your UID/GID, so they belong to your user.
+- mise and uv are in the image; projects with a `mise.toml` get the same
+  tool versions with `mise install`.
+- Login lives in the `claude-sandbox-config` volume, separate from
+  `~/.claude`. On first run, open the printed URL on the host and paste the
+  code back.
+- The agent can't push and its commits would be unsigned. Review with
+  `git diff` and commit from the host.
+- Network access is unrestricted. Add an egress firewall before running it
+  on sensitive code.
+
+The image is built on first use and cached. To update Claude Code inside it:
+
+```sh
+docker build --no-cache -t claude-sandbox ~/the-2026-dev-env/claude/sandbox
+```
 
 ## 5. Docker
 

@@ -1,0 +1,18 @@
+#!/bin/sh
+# Run Claude Code in a container with only the current directory mounted.
+# Usage: claude-sandbox [claude args...]
+set -e
+
+repo="$(dirname "$(dirname "$(readlink -f "$0")")")"
+image=claude-sandbox
+
+# Cached after the first build; use `docker build --no-cache` to update.
+docker build -q -t "$image" \
+  --build-arg UID="$(id -u)" --build-arg GID="$(id -g)" \
+  "$repo/claude/sandbox" >/dev/null
+
+exec docker run --rm -it \
+  -v "$PWD":/workspace \
+  -v claude-sandbox-config:/home/dev/.claude \
+  -v "$repo/claude/CLAUDE.md":/home/dev/.claude/CLAUDE.md:ro \
+  "$image" claude --dangerously-skip-permissions "$@"

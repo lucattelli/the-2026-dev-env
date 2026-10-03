@@ -26,3 +26,7 @@ if command -v fzf >/dev/null; then
         eval "$(fzf --bash)"
     fi
 fi
+
+    # claude sandbox
+_repo="$(dirname "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")")"
+export PATH="$_repo/bin:$PATH"
