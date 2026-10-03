@@ -1,7 +1,8 @@
 # dotfiles
 
-Minimal configs for Neovim, tmux, Alacritty, mise and bash, plus the steps
-to set up a development machine from a fresh Debian 13 (trixie) install.
+Minimal configs for Neovim, tmux, Alacritty, mise, bash and Claude Code,
+plus the steps to set up a development machine from a fresh Debian 13
+(trixie) install.
 
 ```
 nvim/        Neovim 0.12+ config (native vim.pack, LSP via Mason)
@@ -9,6 +10,7 @@ tmux/        tmux config, no plugin manager
 alacritty/   terminal config
 mise/        global tool versions (Neovim, Node, Go, ...)
 bash/        shell snippet sourced from ~/.bashrc
+claude/      global CLAUDE.md for Claude Code
 ```
 
 If you only want the configs on a machine that is already set up, skip to
@@ -193,6 +195,34 @@ shortcut use.
 
 The config reloads on save. To always start inside tmux, uncomment the
 `[terminal.shell]` block in `alacritty/alacritty.toml`.
+
+### Claude Code
+
+Install with the native installer (no root, updates itself in the
+background) and log in on first run. The free Claude.ai plan does not
+include Claude Code.
+
+```sh
+curl -fsSL https://claude.ai/install.sh | bash
+claude
+```
+
+Link the global `CLAUDE.md`, which tells Claude Code how this machine works
+(mise, uv, Debian package names). Link the file, not the folder:
+`~/.claude` also holds credentials and history that must stay out of git.
+
+```sh
+mkdir -p ~/.claude
+ln -s ~/the-2026-dev-env/claude/CLAUDE.md ~/.claude/CLAUDE.md
+```
+
+Check with `/memory` inside a session. Claude Code runs commands in a
+non-interactive shell that doesn't load `~/.bashrc`, so the bash snippet's
+aliases are not available there; `CLAUDE.md` covers that.
+
+Workflow: run `claude` in a tmux pane next to Neovim (`prefix |` opens it in
+the same directory). Edits show up in Neovim through `autoread` and tmux's
+`focus-events`.
 
 ## 5. Docker
 
