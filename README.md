@@ -8,7 +8,7 @@ plus the steps to set up a development machine from a fresh Debian 13
 nvim/        Neovim 0.12+ config (native vim.pack, LSP via Mason)
 tmux/        tmux config, no plugin manager
 alacritty/   terminal config
-mise/        global tool versions (Neovim, Node, Go, gh, delta, lazygit)
+mise/        global tool versions (Neovim, Node, Go, gh, delta, lazygit, Codex)
 bash/        shell snippet sourced from ~/.bashrc
 claude/      global CLAUDE.md and sandbox image for Claude Code
 bin/         helper scripts, added to PATH by the bash snippet
@@ -275,6 +275,41 @@ The image is built on first use and cached. To update Claude Code inside it:
 ```sh
 docker build --no-cache -t claude-sandbox ~/the-2026-dev-env/claude/sandbox
 ```
+
+### Other coding agents
+
+Optional, for comparing models from other providers in the same workflow.
+
+**Codex CLI** (OpenAI) is pinned in `mise/config.toml`, so `mise install`
+already installed it. Run `codex` and choose *Sign in with ChatGPT*; usage
+comes from the ChatGPT plan (rolling 5-hour limits) or from an API key.
+Codex reads `AGENTS.md`, so reuse the same instructions as Claude Code:
+
+```sh
+mkdir -p ~/.codex
+ln -s ~/the-2026-dev-env/claude/CLAUDE.md ~/.codex/AGENTS.md
+```
+
+**opencode** works with many providers, including OpenCode Zen, its own
+gateway with some free models:
+
+```sh
+curl -fsSL https://opencode.ai/install | bash
+opencode
+```
+
+Inside it, run `/connect` → OpenCode Zen, then `/models` to pick a model.
+Notes on Zen:
+
+- Free models rotate and are usually limited-time.
+- Some free models may use your prompts and code for training (e.g. Big
+  Pickle). Check the privacy section of the Zen docs and prefer zero-retention
+  ones. Never use free models on work or confidential code.
+- With billing details on file, Zen auto-reloads credit when the balance gets
+  low. Disable auto-reload or set a monthly limit.
+
+Credentials for both live outside the repo (`~/.codex/`,
+`~/.local/share/opencode/`).
 
 ## 5. Docker
 
