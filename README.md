@@ -8,10 +8,11 @@ plus the steps to set up a development machine from a fresh Debian 13
 nvim/        Neovim 0.12+ config (native vim.pack, LSP via Mason)
 tmux/        tmux config, no plugin manager
 alacritty/   terminal config
-mise/        global tool versions (Neovim, Node, Go, gh, delta, lazygit, Codex)
+mise/        global tool versions (Neovim, Node, Go, CLI tools, Codex)
 bash/        shell snippet sourced from ~/.bashrc
 claude/      global CLAUDE.md and sandbox image for Claude Code
 bin/         helper scripts, added to PATH by the bash snippet
+starship/    prompt config
 ```
 
 If you only want the configs on a machine that is already set up, skip to
@@ -147,8 +148,9 @@ Load the bash snippet:
 echo '[ -f ~/the-2026-dev-env/bash/bashrc ] && . ~/the-2026-dev-env/bash/bashrc' >> ~/.bashrc
 ```
 
-The snippet sets `EDITOR` to Neovim, puts the repo's `bin/` on `PATH`,
-activates mise, aliases `fd` and `bat`
+The snippet sets `EDITOR` to Neovim, keeps 100k lines of history, puts the
+repo's `bin/` (and opencode, if installed) on `PATH`, activates mise, starts
+the starship prompt and zoxide, aliases `fd` and `bat`
 to their Debian names (`fdfind`, `batcat`) and adds the power profile
 aliases from step 7. It also loads the fzf key bindings, using `fd` as the
 file source so they respect `.gitignore`:
@@ -186,6 +188,19 @@ git config --global merge.conflictStyle zdiff3
 
 `lazygit` needs no setup. It is the review step for agent work: stage hunk by
 hunk (`enter`), commit (`c`, signed like any other commit), push (`P`).
+
+### Shell tools
+
+Also installed by `mise install`:
+
+- **starship**: prompt with git status and the project's tool versions. The
+  config in `starship/` uses the plain-text preset, so no Nerd Font is needed.
+- **zoxide**: `z <part of a path>` jumps to frequently used directories;
+  `zi` picks one with fzf.
+- **tealdeer**: `tldr <command>` shows practical examples. Download the
+  pages once with `tldr --update`.
+- **hyperfine**: `hyperfine 'cmd a' 'cmd b'` benchmarks commands.
+- **lazydocker**: terminal dashboard for containers, logs and resources.
 
 Open `nvim` once. It installs the plugins and the language servers
 (clangd, lua_ls, gopls). Restart it when done. Mason needs Go to build
@@ -459,6 +474,19 @@ docker exec -it ollama ollama run qwen2.5-coder:7b
 
 To start ollama with the system: `docker update --restart unless-stopped ollama`.
 
+To ask the local model from the shell, install `llm` with the ollama plugin
+(`llm install` doesn't work inside uv environments, hence `--with`):
+
+```sh
+uv tool install llm --with llm-ollama
+llm models default qwen2.5-coder:7b
+llm "how do I list open ports on linux?"
+cat error.log | llm "explain this error"
+```
+
+The plugin asks ollama for its models at runtime, so ollama must be running;
+otherwise `llm` reports an unknown model.
+
 ### Local code completion (llama.vim)
 
 The Neovim config includes llama.vim, which shows inline completions from a
@@ -580,7 +608,7 @@ ends the graphical session.
 - Update the system: `sudo apt update && sudo apt full-upgrade`
 - Update Neovim plugins: `:lua vim.pack.update()`
 - Update tools within their pinned ranges: `mise upgrade`
-- Update uv and Rust: `uv self update`, `rustup update`
+- Update uv tools and Rust: `uv self update`, `uv tool upgrade --all`, `rustup update`
 - Update the llama.cpp image: `docker pull ghcr.io/ggml-org/llama.cpp:server-cuda`, then recreate the `llama-fim` container
 - List system snapshots: `sudo timeshift --list`
 - Reload the Neovim config: `<leader>o`
