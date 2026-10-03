@@ -189,6 +189,16 @@ git config --global merge.conflictStyle zdiff3
 `lazygit` needs no setup. It is the review step for agent work: stage hunk by
 hunk (`enter`), commit (`c`, signed like any other commit), push (`P`).
 
+Open `nvim` once. It installs the plugins and the language servers
+(clangd, lua_ls, gopls). Restart it when done. Mason needs Go to build
+gopls, which is why `mise install` comes first.
+
+If tmux is already running, restart the server so every option applies:
+
+```sh
+tmux kill-server
+```
+
 ### Shell tools
 
 Also installed by `mise install`:
@@ -202,16 +212,10 @@ Also installed by `mise install`:
   pages once with `tldr --update`.
 - **hyperfine**: `hyperfine 'cmd a' 'cmd b'` benchmarks commands.
 - **lazydocker**: terminal dashboard for containers, logs and resources.
-
-Open `nvim` once. It installs the plugins and the language servers
-(clangd, lua_ls, gopls). Restart it when done. Mason needs Go to build
-gopls, which is why `mise install` comes first.
-
-If tmux is already running, restart the server so every option applies:
-
-```sh
-tmux kill-server
-```
+- **dust**: disk usage as a tree sorted by size, e.g. `dust -d 2 ~` or
+  `sudo dust /var/lib/docker` to see what models and images take up.
+- **glow**: renders Markdown in the terminal; `glow -p README.md` pages
+  long files.
 
 ### Terminal
 
