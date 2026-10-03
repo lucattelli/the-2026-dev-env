@@ -17,3 +17,12 @@ if command -v powerprofilesctl >/dev/null; then
     alias bal='powerprofilesctl set balanced'
     alias eco='powerprofilesctl set power-saver'
 fi
+
+# fzf: Ctrl+R (history), Ctrl+T (files), Alt+C (directories)
+if command -v fzf >/dev/null; then
+    if [ -f /usr/share/doc/fzf/examples/key-bindings.bash ]; then
+        . /usr/share/doc/fzf/examples/key-bindings.bash
+    else
+        eval "$(fzf --bash)"
+    fi
+fi

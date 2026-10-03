@@ -144,6 +144,19 @@ Load the bash snippet:
 echo '[ -f ~/the-2026-dev-env/bash/bashrc ] && . ~/the-2026-dev-env/bash/bashrc' >> ~/.bashrc
 ```
 
+The snippet sets `EDITOR` to Neovim, activates mise, aliases `fd` and `bat`
+to their Debian names (`fdfind`, `batcat`) and adds the power profile
+aliases from step 7. It also loads the fzf key bindings, using `fd` as the
+file source so they respect `.gitignore`:
+
+- `Ctrl+R`: fuzzy search through shell history
+- `Ctrl+T`: insert a file path into the current command
+- `Alt+C`: `cd` into a directory
+
+Typing `fzf` on its own just opens the finder; the key bindings are what the
+snippet adds. Every part is guarded, so the same file works on machines
+where a tool is missing.
+
 Open a new shell and install the pinned tools:
 
 ```sh
@@ -394,6 +407,28 @@ If the session doesn't come back, reboot and look at the previous attempt:
 ```sh
 journalctl -b -1 | grep -iE "PM:|hibernat|nvidia" | tail -40
 ```
+
+### Lid and sleep
+
+Closing the lid suspends; hibernation is used on demand, with
+`systemctl hibernate` or from the LXQt leave menu. Suspend wakes up as soon
+as the lid opens, while hibernation needs the power button (unless the BIOS
+has a "Flip to Start" option). The NVIDIA video memory option above also
+makes suspend more reliable.
+
+The lid is handled by LXQt: LXQt Configuration Center → Power Management →
+Lid, with the lid watcher enabled and the action set to *Suspend*. Check
+that LXQt holds the lid lock:
+
+```sh
+systemd-inhibit --list | grep -i lid
+```
+
+To let systemd-logind handle the lid instead (e.g. to hibernate on close),
+disable the LXQt lid watcher and add a drop-in in
+`/etc/systemd/logind.conf.d/`. Reload it with
+`sudo systemctl kill -s HUP systemd-logind`, never with a restart, which
+ends the graphical session.
 
 ## Maintenance
 
