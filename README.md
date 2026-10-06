@@ -518,6 +518,28 @@ VRAM: on a 6 GB card the completion model (~2 GB) and a 7B ollama model
 (~5 GB) don't fit together. ollama frees its VRAM after a few idle minutes;
 stop the completion server (`docker stop llama-fim`) before heavy ollama use.
 
+### Keyboard (Vial)
+
+Vial configures keyboards running Vial firmware (e.g. a Corne). Allow your
+user to access them; the rule only matches Vial devices:
+
+```sh
+export USER_GID=$(id -g)
+sudo --preserve-env=USER_GID sh -c 'echo "KERNEL==\"hidraw*\", SUBSYSTEM==\"hidraw\", ATTRS{serial}==\"*vial:f64c2b3c*\", MODE=\"0660\", GROUP=\"$USER_GID\", TAG+=\"uaccess\", TAG+=\"udev-acl\"" > /etc/udev/rules.d/99-vial.rules && udevadm control --reload && udevadm trigger'
+```
+
+Reconnect the keyboard. The AppImage needs FUSE 2. Download it from
+get.vial.today and put it on `PATH`:
+
+```sh
+sudo apt install libfuse2t64
+mv ~/Downloads/Vial-*.AppImage ~/.local/bin/vial
+chmod +x ~/.local/bin/vial
+```
+
+The web version (vial.rocks) needs the same udev rule and a Chromium-based
+browser (WebHID); Firefox doesn't support it.
+
 ### Bluetooth
 
 ```sh
@@ -608,9 +630,38 @@ disable the LXQt lid watcher and add a drop-in in
 `sudo systemctl kill -s HUP systemd-logind`, never with a restart, which
 ends the graphical session.
 
+## 8. Everyday apps
+
+LibreOffice and Thunderbird (ESR) come from the Debian repos and get
+security updates with the system. The `l10n` packages are the Portuguese
+interfaces; `hunspell-pt-br` is the spell checker.
+
+```sh
+sudo apt install libreoffice libreoffice-l10n-pt-br hunspell-pt-br \
+  thunderbird thunderbird-l10n-pt-br
+```
+
+Bitwarden isn't in the Debian repos; install it from Flathub. Set up
+Flatpak once, then log out and back in so its apps show up in the menu:
+
+```sh
+sudo apt install flatpak
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+flatpak install flathub com.bitwarden.desktop
+```
+
+Also install the Bitwarden browser extension for filling in passwords.
+Optionally, the CLI (`bw`) reads secrets from the shell, e.g.
+`export API_KEY=$(bw get password my-api)`:
+
+```sh
+mise use -g npm:@bitwarden/cli
+```
+
 ## Maintenance
 
 - Update the system: `sudo apt update && sudo apt full-upgrade`
+- Update Flatpak apps: `flatpak update`
 - Update Neovim plugins: `:lua vim.pack.update()`
 - Update tools within their pinned ranges: `mise upgrade`
 - Update uv tools and Rust: `uv self update`, `uv tool upgrade --all`, `rustup update`
