@@ -538,7 +538,8 @@ chmod +x ~/.local/bin/vial
 ```
 
 The web version (vial.rocks) needs the same udev rule and a Chromium-based
-browser (WebHID); Firefox doesn't support it.
+browser (WebHID), such as the Chromium from step 8; Firefox doesn't
+support it.
 
 ### Bluetooth
 
@@ -632,13 +633,14 @@ ends the graphical session.
 
 ## 8. Everyday apps
 
-LibreOffice and Thunderbird (ESR) come from the Debian repos and get
-security updates with the system. The `l10n` packages are the Portuguese
-interfaces; `hunspell-pt-br` is the spell checker.
+LibreOffice, Thunderbird (ESR) and Chromium come from the Debian repos and
+get security updates with the system. The `l10n` packages are the Portuguese
+interfaces; `hunspell-pt-br` is the spell checker. Chromium is also the
+browser for WebHID tools such as vial.rocks.
 
 ```sh
 sudo apt install libreoffice libreoffice-l10n-pt-br hunspell-pt-br \
-  thunderbird thunderbird-l10n-pt-br
+  thunderbird thunderbird-l10n-pt-br chromium chromium-l10n
 ```
 
 Bitwarden isn't in the Debian repos; install it from Flathub. Set up
@@ -660,12 +662,44 @@ mise use -g npm:@bitwarden/cli
 
 ## Maintenance
 
-- Update the system: `sudo apt update && sudo apt full-upgrade`
-- Update Flatpak apps: `flatpak update`
-- Update Neovim plugins: `:lua vim.pack.update()`
-- Update tools within their pinned ranges: `mise upgrade`
-- Update uv tools and Rust: `uv self update`, `uv tool upgrade --all`, `rustup update`
-- Update the llama.cpp image: `docker pull ghcr.io/ggml-org/llama.cpp:server-cuda`, then recreate the `llama-fim` container
-- List system snapshots: `sudo timeshift --list`
-- Reload the Neovim config: `<leader>o`
-- Reload the tmux config: `prefix R`
+### Weekly: `devenv-update`
+
+`bin/devenv-update` updates everything that can be updated from the shell,
+in order, and stops at the first error:
+
+1. Timeshift snapshot
+2. APT (Debian plus the Docker and NVIDIA repos)
+3. Flatpak
+4. mise itself and its tools, within their pinned ranges
+5. uv itself and uv tools (`llm`)
+6. Rust (`rustup update`)
+7. tldr pages
+
+It asks for the sudo password once, keeps the APT and Flatpak
+confirmations so you can review what changes, and skips tools that aren't
+installed, so it also runs on other machines.
+
+Manual snapshots are not pruned by Timeshift's schedule. Every few weeks,
+list them with `sudo timeshift --list` and remove old ones with
+`sudo timeshift --delete`.
+
+### Occasionally, by hand
+
+- Neovim plugins: `:lua vim.pack.update()`
+- Language servers: `:Mason`, then `U`
+- Container images: `docker pull ollama/ollama` and
+  `docker pull ghcr.io/ggml-org/llama.cpp:server-cuda`, then recreate the
+  `ollama` and `llama-fim` containers with their `docker run` commands
+  (models live in volumes and are kept)
+- Claude sandbox image:
+  `docker build --no-cache -t claude-sandbox ~/the-2026-dev-env/claude/sandbox`
+- Firmware: `fwupdmgr refresh && fwupdmgr update`
+- Vial: download the new AppImage when there is a release
+
+Claude Code updates itself in the background; opencode has its own update
+command (`opencode --help`).
+
+### Reloading configs
+
+- Neovim: `<leader>o`
+- tmux: `prefix R`

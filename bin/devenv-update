@@ -1,0 +1,48 @@
+#!/bin/sh
+# Update everything installed in this dev environment.
+# Steps for tools that aren't installed are skipped, so it runs on any machine.
+set -e
+
+step() { printf '\n==> %s\n' "$1"; }
+has() { command -v "$1" >/dev/null 2>&1; }
+
+sudo -v
+
+if has timeshift; then
+    step "Timeshift snapshot"
+    sudo timeshift --create --comments "before devenv-update"
+fi
+
+step "APT (Debian, Docker, NVIDIA toolkit)"
+sudo apt update
+sudo apt full-upgrade
+
+if has flatpak; then
+    step "Flatpak"
+    flatpak update
+fi
+
+if has mise; then
+    step "mise"
+    mise self-update
+    mise upgrade
+fi
+
+if has uv; then
+    step "uv"
+    uv self update
+    uv tool upgrade --all
+fi
+
+if has rustup; then
+    step "Rust"
+    rustup update
+fi
+
+if has tldr; then
+    step "tldr pages"
+    tldr --update
+fi
+
+step "Done. Neovim plugins (:lua vim.pack.update()), Mason (:Mason, U)"
+echo "    and container images are updated separately."
