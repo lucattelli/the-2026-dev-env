@@ -31,7 +31,7 @@ starship/    prompt config
    give your user access, then log out and back in:
 
    ```sh
-   su -c "apt install -y sudo git && usermod -aG sudo lucattelli"
+   su - -c "apt install -y sudo git && usermod -aG sudo lucattelli"
    ```
 
 3. Clone this repo and run the setup:
@@ -113,7 +113,7 @@ Debian is installed with a root password, so the installer leaves out the
 (plus `git`, needed to clone this repo):
 
 ```sh
-su -c "apt install -y sudo git && usermod -aG sudo <your-user>"
+su - -c "apt install -y sudo git && usermod -aG sudo <your-user>"
 ```
 
 Log out and back in. `devenv-setup` checks for both and stops with this
