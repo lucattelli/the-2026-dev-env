@@ -106,8 +106,6 @@ apt_install build-essential git curl wget pkg-config libssl-dev ca-certificates 
     libreoffice libreoffice-l10n-pt-br hunspell-pt-br \
     thunderbird thunderbird-l10n-pt-br chromium chromium-l10n
 [ "$ZRAM" = yes ] && apt_install zram-tools
-# shellcheck disable=SC2086
-[ -n "$EXTRA_PACKAGES" ] && apt_install $EXTRA_PACKAGES
 
 step "Kernel and firmware ($KERNEL)"
 if [ "$KERNEL" = backports ]; then
@@ -117,6 +115,11 @@ if [ "$KERNEL" = backports ]; then
 else
     apt_install linux-headers-amd64 firmware-linux-nonfree
 fi
+
+# Extra packages after the kernel headers: DKMS drivers (e.g. broadcom-sta)
+# build against them at install time.
+# shellcheck disable=SC2086
+[ -n "$EXTRA_PACKAGES" ] && apt_install $EXTRA_PACKAGES
 
 if [ -n "${KERNEL_PARAMS:-}" ]; then
     step "Kernel parameters ($KERNEL_PARAMS)"
