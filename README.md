@@ -55,26 +55,20 @@ Screen by screen:
   - [x] standard system utilities
 - **Missing firmware prompt** (e.g. Broadcom Wi-Fi): continue without it.
 
-### 3. First boot
+### 3. First boot: bootstrap and setup
 
-- Add `sudo` and `git`, and put your user in the `sudo` group:
-
-  ```sh
-  su - -c "apt install -y sudo git && usermod -aG sudo lucattelli"
-  ```
-
-- Reboot (logging out of LXQt isn't enough), or run `newgrp sudo` and
-  continue in that terminal.
-- Check: `getent group sudo` lists `lucattelli`.
-
-### 4. Setup
+Log in as your user, open a terminal and run:
 
 ```sh
-git clone https://github.com/lucattelli/the-2026-dev-env ~/the-2026-dev-env
-~/the-2026-dev-env/bin/devenv-setup
+wget -qO- https://raw.githubusercontent.com/lucattelli/the-2026-dev-env/main/bin/devenv-bootstrap | su - -c "sh -s $USER"
 ```
 
-- Asks for your password once, then for git name and email near the end.
+- Asks for the **root** password, installs `sudo` and `git`, adds you to
+  the `sudo` group and clones this repo into `~/the-2026-dev-env`.
+- Then starts `devenv-setup` as you, with the `sudo` group already active
+  (no logout needed).
+- `devenv-setup` asks for **your** password once, then for git name and
+  email near the end.
 - Ends with a numbered checklist. Follow it in order:
   - Reboot (loads Wi-Fi/NVIDIA drivers, kernel options, groups, locale,
     keyboard).
@@ -84,6 +78,15 @@ git clone https://github.com/lucattelli/the-2026-dev-env ~/the-2026-dev-env
   - Log in: `gh auth login`, `claude`, `codex`.
   - Timeshift setup wizard.
   - Open `nvim` once.
+
+Without the bootstrap script, the same by hand:
+
+```sh
+su - -c "apt install -y sudo git && usermod -aG sudo $USER"
+# reboot (logging out of LXQt isn't enough), or: newgrp sudo
+git clone https://github.com/lucattelli/the-2026-dev-env ~/the-2026-dev-env
+~/the-2026-dev-env/bin/devenv-setup
+```
 
 `devenv-setup` is safe to re-run. It changes only what differs from the
 expected state, and moves existing configs aside (`*.bak-<date>`) instead of
