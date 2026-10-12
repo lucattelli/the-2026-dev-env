@@ -12,7 +12,65 @@ mise/        global tool versions (Neovim, Node, Go, CLI tools, Codex)
 bash/        shell snippet sourced from ~/.bashrc
 claude/      global CLAUDE.md and sandbox image for Claude Code
 bin/         helper scripts, added to PATH by the bash snippet
+hosts/       per-machine hardware profiles used by devenv-setup
+lxqt/        LXQt settings (panel, shortcuts, power), linked as ~/.config/lxqt
 starship/    prompt config
+```
+
+## Quick start
+
+1. Install Debian 13 with the netinst image: LXQt desktop, no root password
+   (so your user gets sudo), user `lucattelli`, and the machine's hostname
+   from the table below.
+2. Clone this repo and run the setup:
+
+   ```sh
+   sudo apt install git
+   git clone https://github.com/lucattelli/the-2026-dev-env ~/the-2026-dev-env
+   ~/the-2026-dev-env/bin/devenv-setup
+   ```
+
+3. Follow the numbered list it prints at the end: reboot, restore SSH keys
+   with `devenv-keys`, switch the repo remote to SSH, log in to `gh`,
+   `claude` and `codex`, run the Timeshift wizard.
+
+`devenv-setup` is safe to re-run. It changes only what differs from the
+expected state, and moves existing configs aside (`*.bak-<date>`) instead of
+deleting them. The sections after the machine table document what it does,
+step by step.
+
+## Machines
+
+Hardware choices live in `hosts/<hostname>.sh`. Everything else is the same
+on every machine.
+
+| Hostname | Machine | Kernel | GPU driver | Notes |
+| --- | --- | --- | --- | --- |
+| `l5i` | Lenovo Legion 5 (RTX 2060) | stable | Debian 550 | discrete mode, local AI |
+| `insp` | Dell Inspiron 7580 (MX150) | stable | Debian 550 | hybrid, `prime-run` |
+| `mba` | MacBook Air 11" 2014 (4 GB) | stable | none | Broadcom Wi-Fi, zram, Docker on demand |
+| `t1g` | ThinkPad T1g (RTX 5070) | backports | NVIDIA repo (590+) | hybrid, local AI; untested |
+| `xps` | Dell XPS 13 2026 (Ultra 7 355) | backports | none | review after arrival |
+
+Why two kernel tracks: older machines are fully supported by Debian's 6.12
+kernel and gain nothing from a newer one (on the MacBook, newer kernels tend
+to break the Broadcom driver). The T1g and the XPS are too new for it. And
+no single NVIDIA driver covers every GPU: Debian's 550 doesn't support
+Blackwell (RTX 50), and NVIDIA's 590+ repo doesn't support Pascal (MX150).
+
+On a hybrid machine the Intel GPU drives the desktop; run a program on the
+NVIDIA GPU with `prime-run <command>`.
+
+### LXQt settings
+
+`~/.config/lxqt` is a link to `lxqt/` in this repo, so shortcuts, panel and
+power settings follow you between machines. Monitor layouts are per machine
+and ignored by git. To start versioning them from an existing machine:
+
+```sh
+mv ~/.config/lxqt ~/the-2026-dev-env/lxqt
+ln -s ~/the-2026-dev-env/lxqt ~/.config/lxqt
+git -C ~/the-2026-dev-env status   # review what to commit
 ```
 
 If you only want the configs on a machine that is already set up, skip to

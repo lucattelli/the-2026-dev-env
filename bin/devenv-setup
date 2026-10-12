@@ -1,0 +1,308 @@
+#!/bin/bash
+# Set up this dev environment on a fresh Debian 13 (trixie) install.
+#
+# Common steps run on every machine; hardware choices come from
+# hosts/<hostname>.sh. Safe to re-run: every step checks before changing
+# anything, and existing configs are moved aside, never deleted.
+#
+# Usage: devenv-setup [hostname]   (defaults to this machine's hostname)
+set -euo pipefail
+
+repo="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+host="${1:-$(hostname)}"
+profile="$repo/hosts/$host.sh"
+
+step() { printf '\n\033[1m==> %s\033[0m\n' "$1"; }
+note() { printf '    %s\n' "$1"; }
+has() { command -v "$1" >/dev/null 2>&1; }
+apt_install() { sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "$@"; }
+todo=()
+later() { todo+=("$1"); }
+
+# Write a root-owned file only if its content changed. Returns 0 if written.
+write_root() {
+    local file="$1" content
+    content="$(cat)"
+    if [ -f "$file" ] && [ "$(sudo cat "$file")" = "$content" ]; then
+        return 1
+    fi
+    printf '%s\n' "$content" | sudo tee "$file" >/dev/null
+}
+
+# Symlink $2 -> $1, moving anything else at $2 aside first.
+link() {
+    local src="$1" dst="$2"
+    [ -e "$src" ] || return 0
+    if [ -L "$dst" ] && [ "$(readlink -f "$dst")" = "$(readlink -f "$src")" ]; then
+        return 0
+    fi
+    mkdir -p "$(dirname "$dst")"
+    if [ -e "$dst" ] || [ -L "$dst" ]; then
+        local bak="$dst.bak-$(date +%Y%m%d%H%M%S)"
+        mv "$dst" "$bak"
+        note "moved aside: $bak"
+    fi
+    ln -s "$src" "$dst"
+    note "linked: $dst"
+}
+
+# ---------------------------------------------------------------------------
+# Checks
+# ---------------------------------------------------------------------------
+
+[ "$(id -u)" -ne 0 ] || { echo "Run as your user, not root."; exit 1; }
+. /etc/os-release
+[ "${VERSION_CODENAME:-}" = trixie ] || { echo "Expected Debian 13 (trixie), found ${PRETTY_NAME:-unknown}."; exit 1; }
+if [ ! -f "$profile" ]; then
+    echo "No profile for '$host'. Available:"
+    ls "$repo/hosts" | sed 's/\.sh$//; s/^/  /'
+    echo "Set the hostname (sudo hostnamectl set-hostname <name>) or pass it: devenv-setup <name>"
+    exit 1
+fi
+. "$profile"
+
+echo "Setting up '$host': kernel=$KERNEL gpu=$GPU hybrid=$HYBRID_GPU local_ai=$LOCAL_AI"
+sudo -v
+# Keep sudo alive while the script runs.
+while true; do sudo -n true; sleep 50; kill -0 "$$" 2>/dev/null || exit; done 2>/dev/null &
+
+# ---------------------------------------------------------------------------
+# System
+# ---------------------------------------------------------------------------
+
+step "APT sources (main contrib non-free non-free-firmware, backports)"
+if write_root /etc/apt/sources.list.d/debian.sources << 'EOT'
+Types: deb
+URIs: http://deb.debian.org/debian
+Suites: trixie trixie-updates trixie-backports
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+Types: deb
+URIs: http://security.debian.org/debian-security
+Suites: trixie-security
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+EOT
+then note "wrote debian.sources"; fi
+if [ -s /etc/apt/sources.list ]; then
+    sudo mv /etc/apt/sources.list /etc/apt/sources.list.bak
+    note "old sources.list moved to sources.list.bak"
+fi
+sudo apt-get update
+sudo DEBIAN_FRONTEND=noninteractive apt-get full-upgrade -y
+
+step "Base packages"
+apt_install build-essential git curl wget pkg-config libssl-dev ca-certificates \
+    ripgrep fd-find fzf bat tmux jq htop xclip unzip \
+    fwupd unattended-upgrades timeshift flatpak rfkill blueman power-profiles-daemon \
+    alacritty fonts-jetbrains-mono libfuse2t64 \
+    libreoffice libreoffice-l10n-pt-br hunspell-pt-br \
+    thunderbird thunderbird-l10n-pt-br chromium chromium-l10n
+[ "$ZRAM" = yes ] && apt_install zram-tools
+# shellcheck disable=SC2086
+[ -n "$EXTRA_PACKAGES" ] && apt_install $EXTRA_PACKAGES
+
+step "Kernel and firmware ($KERNEL)"
+if [ "$KERNEL" = backports ]; then
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -t trixie-backports \
+        linux-image-amd64 linux-headers-amd64 firmware-linux-nonfree
+    later "Reboot into the backports kernel. The stable one stays in GRUB's advanced options as a fallback."
+else
+    apt_install linux-headers-amd64 firmware-linux-nonfree
+fi
+
+if [ "$ZRAM" = yes ]; then
+    step "zram (compressed swap in RAM)"
+    if write_root /etc/default/zramswap << 'EOT'
+ALGO=zstd
+PERCENT=50
+PRIORITY=100
+EOT
+    then sudo systemctl restart zramswap; note "zram: 50% of RAM, zstd"; fi
+fi
+
+if [ "$GPU" != none ]; then
+    step "NVIDIA driver ($GPU)"
+    if [ "$GPU" = nvidia-repo ]; then
+        if ! dpkg -s cuda-keyring >/dev/null 2>&1; then
+            tmp="$(mktemp -d)"
+            curl -fsSL -o "$tmp/cuda-keyring.deb" \
+                https://developer.download.nvidia.com/compute/cuda/repos/debian13/x86_64/cuda-keyring_1.1-1_all.deb
+            sudo dpkg -i "$tmp/cuda-keyring.deb"
+            rm -rf "$tmp"
+            sudo apt-get update
+        fi
+        apt_install nvidia-open
+    elif [ "$KERNEL" = backports ]; then
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -t trixie-backports \
+            nvidia-driver nvidia-kernel-dkms firmware-nvidia-graphics
+    else
+        apt_install nvidia-driver firmware-misc-nonfree
+    fi
+    # Keep video memory across suspend and hibernation. /tmp is RAM on
+    # Debian 13, so the driver saves it to /var/tmp instead.
+    if write_root /etc/modprobe.d/nvidia-power.conf << 'EOT'
+options nvidia NVreg_PreserveVideoMemoryAllocations=1 NVreg_TemporaryFilePath=/var/tmp
+EOT
+    then sudo update-initramfs -u; fi
+    later "Reboot to load the NVIDIA driver, then check with nvidia-smi."
+    if [ "$HYBRID_GPU" = yes ]; then
+        later "Hybrid graphics: the Intel GPU drives the desktop; run programs on the NVIDIA GPU with 'prime-run <command>'."
+    fi
+fi
+
+if has mokutil && mokutil --sb-state 2>/dev/null | grep -q enabled \
+    && [ -f /var/lib/dkms/mok.pub ] && ! mokutil --test-key /var/lib/dkms/mok.pub >/dev/null 2>&1; then
+    step "Secure Boot: enroll the DKMS signing key"
+    note "Choose a one-time password; on the next boot pick 'Enroll MOK' and type it."
+    sudo mokutil --import /var/lib/dkms/mok.pub
+    later "On the next boot, the blue MOK screen appears: Enroll MOK -> Continue -> type the password."
+fi
+
+step "Docker"
+if [ ! -f /etc/apt/sources.list.d/docker.sources ]; then
+    sudo install -m 0755 -d /etc/apt/keyrings
+    sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+    sudo chmod a+r /etc/apt/keyrings/docker.asc
+    write_root /etc/apt/sources.list.d/docker.sources << 'EOT' || true
+Types: deb
+URIs: https://download.docker.com/linux/debian
+Suites: trixie
+Components: stable
+Signed-By: /etc/apt/keyrings/docker.asc
+EOT
+    sudo apt-get update
+fi
+apt_install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+if ! id -nG | grep -qw docker; then
+    sudo usermod -aG docker "$USER"
+    later "Log out and back in so the docker group applies."
+fi
+if [ "$DOCKER_ON_DEMAND" = yes ]; then
+    # The socket stays enabled, so the daemon starts on the first docker command.
+    sudo systemctl disable --now docker.service containerd.service
+    sudo systemctl enable docker.socket
+    note "Docker starts on demand"
+fi
+
+if [ "$GPU" != none ] && [ "$LOCAL_AI" = yes ]; then
+    step "NVIDIA Container Toolkit (GPU in containers)"
+    if [ ! -f /etc/apt/sources.list.d/nvidia-container-toolkit.sources ]; then
+        sudo curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey \
+            -o /etc/apt/keyrings/nvidia-container-toolkit.asc
+        write_root /etc/apt/sources.list.d/nvidia-container-toolkit.sources << 'EOT' || true
+Types: deb
+URIs: https://nvidia.github.io/libnvidia-container/stable/deb/amd64
+Suites: /
+Signed-By: /etc/apt/keyrings/nvidia-container-toolkit.asc
+EOT
+        sudo apt-get update
+    fi
+    apt_install nvidia-container-toolkit
+    sudo nvidia-ctk runtime configure --runtime=docker
+    sudo systemctl restart docker
+fi
+
+step "Vial keyboard access (udev)"
+gid="$(id -g)"
+if write_root /etc/udev/rules.d/99-vial.rules << EOT
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{serial}=="*vial:f64c2b3c*", MODE="0660", GROUP="$gid", TAG+="uaccess", TAG+="udev-acl"
+EOT
+then sudo udevadm control --reload && sudo udevadm trigger; fi
+
+step "Default terminal, Bluetooth, Flatpak apps"
+[ -x /usr/bin/alacritty ] && sudo update-alternatives --set x-terminal-emulator /usr/bin/alacritty
+sudo rfkill unblock bluetooth || true
+sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+sudo flatpak install -y --noninteractive flathub com.bitwarden.desktop
+
+# ---------------------------------------------------------------------------
+# User environment
+# ---------------------------------------------------------------------------
+
+step "Toolchains: mise, uv, rustup"
+[ -x "$HOME/.local/bin/mise" ] || curl -fsSL https://mise.run | sh
+[ -x "$HOME/.local/bin/uv" ] || curl -LsSf https://astral.sh/uv/install.sh | sh
+if [ ! -x "$HOME/.cargo/bin/rustup" ]; then
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+fi
+"$HOME/.cargo/bin/rustup" component add rust-analyzer
+
+step "Dotfiles"
+link "$repo/nvim" "$HOME/.config/nvim"
+link "$repo/tmux" "$HOME/.config/tmux"
+link "$repo/mise" "$HOME/.config/mise"
+link "$repo/alacritty" "$HOME/.config/alacritty"
+link "$repo/lxqt" "$HOME/.config/lxqt"
+link "$repo/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
+link "$repo/claude/CLAUDE.md" "$HOME/.codex/AGENTS.md"
+line="[ -f \"$repo/bash/bashrc\" ] && . \"$repo/bash/bashrc\""
+grep -qF "$repo/bash/bashrc" "$HOME/.bashrc" 2>/dev/null || {
+    printf '\n%s\n' "$line" >> "$HOME/.bashrc"
+    note "added the bash snippet to ~/.bashrc"
+}
+
+step "Tools pinned in mise/config.toml"
+# Node first: the npm: tools (Codex, Bitwarden CLI) need it.
+"$HOME/.local/bin/mise" install node
+"$HOME/.local/bin/mise" install
+
+step "Git"
+if [ -z "$(git config --global user.name || true)" ]; then
+    read -rp "    git user.name: " name
+    git config --global user.name "$name"
+fi
+if [ -z "$(git config --global user.email || true)" ]; then
+    read -rp "    git user.email: " email
+    git config --global user.email "$email"
+fi
+git config --global init.defaultBranch main
+git config --global gpg.format ssh
+git config --global user.signingkey "$HOME/.ssh/id_ed25519.pub"
+git config --global commit.gpgsign true
+git config --global core.pager delta
+git config --global interactive.diffFilter "delta --color-only"
+git config --global delta.navigate true
+git config --global merge.conflictStyle zdiff3
+
+step "Coding agents"
+has claude || [ -x "$HOME/.local/bin/claude" ] || curl -fsSL https://claude.ai/install.sh | bash
+[ -x "$HOME/.opencode/bin/opencode" ] || curl -fsSL https://opencode.ai/install | bash
+
+if [ "$LOCAL_AI" = yes ]; then
+    step "Local AI (ollama, llama.cpp completion server, llm)"
+    "$HOME/.local/bin/uv" tool install llm --with llm-ollama
+fi
+if [ "$LOCAL_AI" = yes ] && [ "$GPU" != none ] && ! nvidia-smi >/dev/null 2>&1; then
+    later "After rebooting into the NVIDIA driver, run devenv-setup again to create the ollama and llama-fim containers."
+elif [ "$LOCAL_AI" = yes ] && [ "$GPU" != none ]; then
+    if ! sudo docker container inspect ollama >/dev/null 2>&1; then
+        sudo docker run -d --gpus all --name ollama --restart unless-stopped \
+            -v ollama:/root/.ollama -p 11434:11434 ollama/ollama
+    fi
+    if ! sudo docker container inspect llama-fim >/dev/null 2>&1; then
+        sudo docker run -d --gpus all --name llama-fim --restart unless-stopped \
+            -p 127.0.0.1:8012:8012 -v llama-cache:/root/.cache \
+            ghcr.io/ggml-org/llama.cpp:server-cuda \
+            --fim-qwen-1.5b-default --host 0.0.0.0
+    fi
+    later "Pull a chat model: docker exec -it ollama ollama pull qwen2.5-coder:7b; then: llm models default qwen2.5-coder:7b"
+fi
+
+# ---------------------------------------------------------------------------
+# What's left
+# ---------------------------------------------------------------------------
+
+step "Done. Still to do by hand:"
+later "Open a new shell (or log out and back in) so PATH and groups apply."
+later "Bitwarden CLI: bw login, then 'devenv-keys' to restore this machine's SSH keys."
+later "Switch the repo to SSH: git -C '$repo' remote set-url origin git@github.com:lucattelli/the-2026-dev-env.git"
+later "Log in: gh auth login, claude, codex."
+later "Timeshift: open it from the menu and run the setup wizard (rsync)."
+later "Open nvim once to install plugins and language servers."
+i=1
+for t in "${todo[@]}"; do
+    printf '  %d. %s\n' "$i" "$t"
+    i=$((i + 1))
+done
