@@ -74,22 +74,50 @@ git config --global user.email "you@example.com"
 git config --global init.defaultBranch main
 ```
 
-Create an SSH key and load it into the agent:
+### SSH keys
+
+Each machine has its own SSH key, kept in Bitwarden and registered on GitHub
+once. Keys live in a Bitwarden folder named `ssh`, as secure notes:
+
+- Item name: `<hostname>-<purpose>` for one machine (`l5i-github`), or
+  `all-<purpose>` for every machine (`all-tilde`).
+- One hidden field per file in `~/.ssh`: the field name is the file name
+  (`id_ed25519`, `id_ed25519.pub`), the value is the file content. Field
+  names must be unique across a machine's items.
+
+On a reinstalled machine, restore its keys (needs `bw`, installed by mise in
+step 4, and `jq`). Existing files are never overwritten:
 
 ```sh
-ssh-keygen -t ed25519 -C "you@example.com"
-ssh-add ~/.ssh/id_ed25519
-```
-
-Copy the public key and add it on GitHub (Settings → SSH and GPG keys):
-
-```sh
-xclip -selection clipboard < ~/.ssh/id_ed25519.pub
+devenv-keys
 ssh -T git@github.com
 ```
 
-Optional: sign commits with the same key. Add it on GitHub a second time,
-as a *Signing Key*.
+For a new machine, create the key, store it in Bitwarden and add the public
+key on GitHub (Settings → SSH and GPG keys) twice: as an *Authentication
+Key* and as a *Signing Key*.
+
+```sh
+ssh-keygen -t ed25519 -C "you@$(hostname)"
+```
+
+Multi-line values pasted into Bitwarden's field UI can lose their line
+breaks. Check the private key round-trips, and write it with the CLI if not:
+
+```sh
+export BW_SESSION=$(bw unlock --raw)
+item="$(hostname)-github"
+bw get item "$item" | jq -r '.fields[] | select(.name == "id_ed25519") | .value' \
+  | diff - ~/.ssh/id_ed25519 && echo ok
+
+# only if the check fails:
+id=$(bw get item "$item" | jq -r .id)
+bw get item "$id" \
+  | jq --arg v "$(cat ~/.ssh/id_ed25519)" '(.fields[] | select(.name == "id_ed25519") | .value) = $v' \
+  | bw encode | bw edit item "$id" >/dev/null
+```
+
+Sign commits with the key:
 
 ```sh
 git config --global gpg.format ssh

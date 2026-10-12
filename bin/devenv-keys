@@ -1,0 +1,56 @@
+#!/bin/sh
+# Restore this machine's SSH keys from Bitwarden.
+#
+# Keys live in Bitwarden as secure notes in a folder named "ssh". Each item
+# is named "<hostname>-<purpose>" (keys for one machine) or "all-<purpose>"
+# (keys for every machine), e.g. "l5i-github" or "all-tilde". Each hidden
+# field in an item is one file in ~/.ssh: the field name is the file name
+# and the value is the file content.
+# Existing files are never overwritten.
+set -e
+
+for cmd in bw jq; do
+    command -v "$cmd" >/dev/null || { echo "missing: $cmd"; exit 1; }
+done
+
+host=$(hostname)
+
+if [ -z "$BW_SESSION" ]; then
+    if bw login --check >/dev/null 2>&1; then
+        BW_SESSION=$(bw unlock --raw)
+    else
+        BW_SESSION=$(bw login --raw)
+    fi
+    export BW_SESSION
+fi
+bw sync >/dev/null
+
+folder=$(bw list folders | jq -r '.[] | select(.name == "ssh") | .id')
+[ -n "$folder" ] || { echo 'no "ssh" folder in Bitwarden'; exit 1; }
+
+items=$(bw list items --folderid "$folder" |
+    jq -c --arg h "$host" '[.[]
+        | select(.name | startswith($h + "-") or startswith("all-"))]')
+
+[ "$(printf "%s\n" "$items" | jq length)" -gt 0 ] || {
+    echo "no items for $host (expected names like $host-github or all-...)"
+    exit 1
+}
+
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+
+for name in $(printf "%s\n" "$items" | jq -r '.[].fields[]?.name'); do
+    file="$HOME/.ssh/$name"
+    if [ -e "$file" ]; then
+        echo "exists, skipped: $file"
+        continue
+    fi
+    printf "%s\n" "$items" | jq -r --arg n "$name" \
+        'first(.[].fields[]? | select(.name == $n) | .value)' > "$file"
+    case "$file" in
+        *.pub) chmod 644 "$file" ;;
+        *)     chmod 600 "$file" ;;
+    esac
+    echo "wrote: $file"
+done
