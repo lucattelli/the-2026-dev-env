@@ -19,41 +19,71 @@ starship/    prompt config
 
 ## Quick start
 
-1. Install Debian 13 with the netinst image, with a wired connection (USB
-   Ethernet or phone USB tethering) if the Wi-Fi needs a non-free driver.
-   Check the machine's row in the [table](#machines) first: some need a
-   kernel option at the installer's boot menu (the MacBook Air needs
-   `intel_iommu=off`; press `e` and add it after the `---`).
-   - Language English, location Brazil (other → South America), locale
-     `en_US.UTF-8`, keyboard American English.
-   - Hostname from the table below, a root password, user `lucattelli`.
-   - Software selection: *Debian desktop environment*, *LXQt*, *SSH
-     server* and *standard system utilities*. Uncheck *GNOME*, which is
-     selected by default.
-2. With a root password set, the installer leaves out `sudo`. Add it and
-   give your user access:
+### 1. Before installing
 
-   ```sh
-   su - -c "apt install -y sudo git && usermod -aG sudo lucattelli"
-   ```
+- Image: Debian 13 netinst (amd64).
+- Network: plug in a cable (USB Ethernet or phone USB tethering) if the
+  Wi-Fi needs a non-free driver (MacBook Air).
+- Check the machine's row in the [table](#machines).
 
-   Then reboot (logging out of LXQt may not be enough), or run
-   `newgrp sudo` and continue in that terminal. Check with
-   `getent group sudo`.
+### 2. Installer
 
-3. Clone this repo and run the setup:
+Screen by screen:
 
-   ```sh
-   git clone https://github.com/lucattelli/the-2026-dev-env ~/the-2026-dev-env
-   ~/the-2026-dev-env/bin/devenv-setup
-   ```
+- **Boot menu:** *Install*. If the machine needs a kernel option (MacBook
+  Air: `intel_iommu=off`), press `e`, add it at the end of the `linux`
+  line after the `---`, then `Ctrl+X`.
+- **Language:** English.
+- **Location:** other → South America → Brazil.
+- **Locale:** `en_US.UTF-8`.
+- **Keyboard:** American English.
+- **Network interface:** the cable (Wi-Fi may not be listed).
+- **Hostname:** from the [table](#machines) (`l5i`, `insp`, `mba`, `t1g`,
+  `xps`).
+- **Domain name:** empty.
+- **Root password:** set one.
+- **Full name / username:** your name / `lucattelli`.
+- **Time zone:** São Paulo.
+- **Partitioning:** Guided, use entire disk → All files in one partition.
+- **Mirror:** Brazil → `deb.debian.org`.
+- **Popularity contest:** No.
+- **Software selection:**
+  - [x] Debian desktop environment
+  - [ ] GNOME (selected by default, uncheck it)
+  - [x] LXQt
+  - [x] SSH server
+  - [x] standard system utilities
+- **Missing firmware prompt** (e.g. Broadcom Wi-Fi): continue without it.
 
-4. Follow the numbered list it prints at the end. It starts with a reboot,
-   which loads new drivers (the MacBook's Wi-Fi, NVIDIA), kernel parameters,
-   groups, locale and keyboard. Then connect to Wi-Fi if the cable was only
-   for the install, restore SSH keys with `devenv-keys`, switch the repo
-   remote to SSH, log in to `gh`, `claude` and `codex`, and run the
-   Timeshift wizard.
+### 3. First boot
+
+- Add `sudo` and `git`, and put your user in the `sudo` group:
+
+  ```sh
+  su - -c "apt install -y sudo git && usermod -aG sudo lucattelli"
+  ```
+
+- Reboot (logging out of LXQt isn't enough), or run `newgrp sudo` and
+  continue in that terminal.
+- Check: `getent group sudo` lists `lucattelli`.
+
+### 4. Setup
+
+```sh
+git clone https://github.com/lucattelli/the-2026-dev-env ~/the-2026-dev-env
+~/the-2026-dev-env/bin/devenv-setup
+```
+
+- Asks for your password once, then for git name and email near the end.
+- Ends with a numbered checklist. Follow it in order:
+  - Reboot (loads Wi-Fi/NVIDIA drivers, kernel options, groups, locale,
+    keyboard).
+  - Connect to Wi-Fi, if the cable was only for the install.
+  - `bw login`, then `devenv-keys` (restores this machine's SSH keys).
+  - Switch the repo remote to SSH.
+  - Log in: `gh auth login`, `claude`, `codex`.
+  - Timeshift setup wizard.
+  - Open `nvim` once.
 
 `devenv-setup` is safe to re-run. It changes only what differs from the
 expected state, and moves existing configs aside (`*.bak-<date>`) instead of
@@ -62,14 +92,15 @@ step by step.
 
 ## Locale and keyboard
 
-Every machine uses English messages with Brazilian formats (numbers like
-1.234,56, dates like 12/10/2026, R$, A4, metric) and a US international
-keyboard with dead keys (`us`, variant `intl`): `'` then `a` gives `á`,
-`'` then `c` gives `ç`, and `'` then space types a plain quote (same for
-`"`, `` ` ``, `~` and `^`). In the installer pick
-English, location Brazil (other → South America) and `en_US.UTF-8`;
-`devenv-setup` adds the `pt_BR` formats and the keyboard variant. A profile
-can override the keyboard with `KEYBOARD_LAYOUT` and `KEYBOARD_VARIANT`.
+Set by `devenv-setup` on every machine:
+
+- Messages in English (`en_US.UTF-8`).
+- Formats from `pt_BR`: numbers (1.234,56), dates (12/10/2026), currency
+  (R$), A4 paper, metric units.
+- Keyboard `us`, variant `intl` (dead keys): `'` + `a` = `á`, `'` + `c` =
+  `ç`, `~` + `a` = `ã`, `'` + space = `'`. Same for `"`, `` ` ``, `~`, `^`.
+- A profile can override the keyboard with `KEYBOARD_LAYOUT` and
+  `KEYBOARD_VARIANT`.
 
 ## Machines
 
