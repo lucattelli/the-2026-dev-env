@@ -41,9 +41,12 @@ starship/    prompt config
    ~/the-2026-dev-env/bin/devenv-setup
    ```
 
-4. Follow the numbered list it prints at the end: reboot, restore SSH keys
-   with `devenv-keys`, switch the repo remote to SSH, log in to `gh`,
-   `claude` and `codex`, run the Timeshift wizard.
+4. Follow the numbered list it prints at the end. It starts with a reboot,
+   which loads new drivers (the MacBook's Wi-Fi, NVIDIA), kernel parameters,
+   groups, locale and keyboard. Then connect to Wi-Fi if the cable was only
+   for the install, restore SSH keys with `devenv-keys`, switch the repo
+   remote to SSH, log in to `gh`, `claude` and `codex`, and run the
+   Timeshift wizard.
 
 `devenv-setup` is safe to re-run. It changes only what differs from the
 expected state, and moves existing configs aside (`*.bak-<date>`) instead of
