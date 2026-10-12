@@ -1,2 +1,4 @@
 
 .aider*
+# LXQt: monitor layouts are per machine
+lxqt/lxqt-config-monitor/

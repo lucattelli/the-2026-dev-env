@@ -1,0 +1,10 @@
+# Dell Inspiron 15 7580: 8th-gen i7, 16 GB, Intel UHD + NVIDIA (likely MX150,
+# Pascal; confirm with lspci). Pascal is not supported by NVIDIA's 590+ repo
+# drivers, so it stays on Debian's 550 driver and the stable kernel.
+KERNEL=stable
+GPU=nvidia-debian
+HYBRID_GPU=yes
+LOCAL_AI=no            # 2 GB of VRAM is too little for useful local models
+DOCKER_ON_DEMAND=no
+ZRAM=no
+EXTRA_PACKAGES=""
