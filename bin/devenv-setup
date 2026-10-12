@@ -111,7 +111,7 @@ step "Kernel and firmware ($KERNEL)"
 if [ "$KERNEL" = backports ]; then
     sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -t trixie-backports \
         linux-image-amd64 linux-headers-amd64 firmware-linux-nonfree
-    later "Reboot into the backports kernel. The stable one stays in GRUB's advanced options as a fallback."
+    later "After the reboot you run the backports kernel; the stable one stays in GRUB's advanced options as a fallback."
 else
     apt_install linux-headers-amd64 firmware-linux-nonfree
 fi
@@ -164,7 +164,7 @@ if [ "$GPU" != none ]; then
 options nvidia NVreg_PreserveVideoMemoryAllocations=1 NVreg_TemporaryFilePath=/var/tmp
 EOT
     then sudo update-initramfs -u; fi
-    later "Reboot to load the NVIDIA driver, then check with nvidia-smi."
+    later "After the reboot, check the NVIDIA driver with nvidia-smi."
     if [ "$HYBRID_GPU" = yes ]; then
         later "Hybrid graphics: the Intel GPU drives the desktop; run programs on the NVIDIA GPU with 'prime-run <command>'."
     fi
@@ -195,7 +195,6 @@ fi
 apt_install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 if ! id -nG | grep -qw docker; then
     sudo usermod -aG docker "$USER"
-    later "Log out and back in so the docker group applies."
 fi
 if [ "$DOCKER_ON_DEMAND" = yes ]; then
     # The socket stays enabled, so the daemon starts on the first docker command.
@@ -241,7 +240,7 @@ LC_MONETARY=pt_BR.UTF-8
 LC_PAPER=pt_BR.UTF-8
 LC_MEASUREMENT=pt_BR.UTF-8
 EOT
-then later "Log out and back in for the Brazilian number, date and currency formats."; fi
+then note "locale: applies from the next login"; fi
 # US international keyboard with dead keys (' then a = á, ' then c = ç;
 # ' then space types a plain quote). Profiles can override.
 kb_layout="${KEYBOARD_LAYOUT:-us}"
@@ -351,12 +350,19 @@ fi
 # ---------------------------------------------------------------------------
 
 step "Done. Still to do by hand:"
-later "Open a new shell (or log out and back in) so PATH and groups apply."
 later "Bitwarden CLI: bw login, then 'devenv-keys' to restore this machine's SSH keys."
 later "Switch the repo to SSH: git -C '$repo' remote set-url origin git@github.com:lucattelli/the-2026-dev-env.git"
 later "Log in: gh auth login, claude, codex."
 later "Timeshift: open it from the menu and run the setup wizard (rsync)."
 later "Open nvim once to install plugins and language servers."
+# Rebooting first applies everything at once: new drivers (Wi-Fi, NVIDIA),
+# kernel parameters, groups, PATH, locale and keyboard.
+first=("Reboot.")
+case " $EXTRA_PACKAGES " in
+    *" broadcom-sta-dkms "*)
+        first+=("Connect to Wi-Fi: nmcli device wifi connect '<network>' --ask (this card is WPA2 only).") ;;
+esac
+todo=("${first[@]}" "${todo[@]}")
 i=1
 for t in "${todo[@]}"; do
     printf '  %d. %s\n' "$i" "$t"
