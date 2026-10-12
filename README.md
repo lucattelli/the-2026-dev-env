@@ -19,8 +19,14 @@ starship/    prompt config
 
 ## Quick start
 
-1. Install Debian 13 with the netinst image: LXQt desktop, a root password,
-   user `lucattelli`, and the machine's hostname from the table below.
+1. Install Debian 13 with the netinst image, with a wired connection (USB
+   Ethernet or phone USB tethering) if the Wi-Fi needs a non-free driver:
+   - Language English, location Brazil (other → South America), locale
+     `en_US.UTF-8`, keyboard American English.
+   - Hostname from the table below, a root password, user `lucattelli`.
+   - Software selection: *Debian desktop environment*, *LXQt*, *SSH
+     server* and *standard system utilities*. Uncheck *GNOME*, which is
+     selected by default.
 2. With a root password set, the installer leaves out `sudo`. Add it and
    give your user access, then log out and back in:
 
