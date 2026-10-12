@@ -20,7 +20,10 @@ starship/    prompt config
 ## Quick start
 
 1. Install Debian 13 with the netinst image, with a wired connection (USB
-   Ethernet or phone USB tethering) if the Wi-Fi needs a non-free driver:
+   Ethernet or phone USB tethering) if the Wi-Fi needs a non-free driver.
+   Check the machine's row in the [table](#machines) first: some need a
+   kernel option at the installer's boot menu (the MacBook Air needs
+   `intel_iommu=off`; press `e` and add it after the `---`).
    - Language English, location Brazil (other → South America), locale
      `en_US.UTF-8`, keyboard American English.
    - Hostname from the table below, a root password, user `lucattelli`.
@@ -28,11 +31,15 @@ starship/    prompt config
      server* and *standard system utilities*. Uncheck *GNOME*, which is
      selected by default.
 2. With a root password set, the installer leaves out `sudo`. Add it and
-   give your user access, then log out and back in:
+   give your user access:
 
    ```sh
    su - -c "apt install -y sudo git && usermod -aG sudo lucattelli"
    ```
+
+   Then reboot (logging out of LXQt may not be enough), or run
+   `newgrp sudo` and continue in that terminal. Check with
+   `getent group sudo`.
 
 3. Clone this repo and run the setup:
 
