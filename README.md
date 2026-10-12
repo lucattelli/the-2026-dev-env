@@ -19,18 +19,23 @@ starship/    prompt config
 
 ## Quick start
 
-1. Install Debian 13 with the netinst image: LXQt desktop, no root password
-   (so your user gets sudo), user `lucattelli`, and the machine's hostname
-   from the table below.
-2. Clone this repo and run the setup:
+1. Install Debian 13 with the netinst image: LXQt desktop, a root password,
+   user `lucattelli`, and the machine's hostname from the table below.
+2. With a root password set, the installer leaves out `sudo`. Add it and
+   give your user access, then log out and back in:
 
    ```sh
-   sudo apt install git
+   su -c "apt install -y sudo git && usermod -aG sudo lucattelli"
+   ```
+
+3. Clone this repo and run the setup:
+
+   ```sh
    git clone https://github.com/lucattelli/the-2026-dev-env ~/the-2026-dev-env
    ~/the-2026-dev-env/bin/devenv-setup
    ```
 
-3. Follow the numbered list it prints at the end: reboot, restore SSH keys
+4. Follow the numbered list it prints at the end: reboot, restore SSH keys
    with `devenv-keys`, switch the repo remote to SSH, log in to `gh`,
    `claude` and `codex`, run the Timeshift wizard.
 
