@@ -85,15 +85,16 @@ If you only want the configs on a machine that is already set up, skip to
 
 ### sudo
 
-If a root password was set during install, your user is not in the `sudo`
-group yet:
+Debian is installed with a root password, so the installer leaves out the
+`sudo` package and your user is not in the `sudo` group. As root, add both
+(plus `git`, needed to clone this repo):
 
 ```sh
-su -
-usermod -aG sudo <your-user>
+su -c "apt install -y sudo git && usermod -aG sudo <your-user>"
 ```
 
-Log out and back in.
+Log out and back in. `devenv-setup` checks for both and stops with this
+command if either is missing.
 
 ### APT sources
 
