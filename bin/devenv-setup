@@ -118,6 +118,15 @@ else
     apt_install linux-headers-amd64 firmware-linux-nonfree
 fi
 
+if [ -n "${KERNEL_PARAMS:-}" ]; then
+    step "Kernel parameters ($KERNEL_PARAMS)"
+    sudo install -d /etc/default/grub.d
+    if write_root /etc/default/grub.d/devenv.cfg << EOT
+GRUB_CMDLINE_LINUX_DEFAULT="\$GRUB_CMDLINE_LINUX_DEFAULT $KERNEL_PARAMS"
+EOT
+    then sudo update-grub; fi
+fi
+
 if [ "$ZRAM" = yes ]; then
     step "zram (compressed swap in RAM)"
     if write_root /etc/default/zramswap << 'EOT'

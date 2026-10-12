@@ -8,3 +8,4 @@ LOCAL_AI=no            # 2 GB of VRAM is too little for useful local models
 DOCKER_ON_DEMAND=no
 ZRAM=no
 EXTRA_PACKAGES=""
+KERNEL_PARAMS=""

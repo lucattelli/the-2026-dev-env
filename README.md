@@ -53,7 +53,7 @@ on every machine.
 | --- | --- | --- | --- | --- |
 | `l5i` | Lenovo Legion 5 (RTX 2060) | stable | Debian 550 | discrete mode, local AI |
 | `insp` | Dell Inspiron 7580 (MX150) | stable | Debian 550 | hybrid, `prime-run` |
-| `mba` | MacBook Air 11" 2014 (4 GB) | stable | none | Broadcom Wi-Fi, zram, Docker on demand |
+| `mba` | MacBook Air 11" 2014 (4 GB) | stable | none | Broadcom Wi-Fi, zram, Docker on demand, `intel_iommu=off` |
 | `t1g` | ThinkPad T1g (RTX 5070) | backports | NVIDIA repo (590+) | hybrid, local AI; untested |
 | `xps` | Dell XPS 13 2026 (Ultra 7 355) | backports | none | review after arrival |
 
@@ -62,6 +62,12 @@ kernel and gain nothing from a newer one (on the MacBook, newer kernels tend
 to break the Broadcom driver). The T1g and the XPS are too new for it. And
 no single NVIDIA driver covers every GPU: Debian's 550 doesn't support
 Blackwell (RTX 50), and NVIDIA's 590+ repo doesn't support Pascal (MX150).
+
+The MacBook Air's SSD only shows up with `intel_iommu=off`. At the
+installer's boot menu, press `e` and add it at the end of the `linux` line,
+after the `---`, so the installer also keeps it for the installed system.
+`devenv-setup` then pins it in `/etc/default/grub.d/devenv.cfg` through the
+profile's `KERNEL_PARAMS`.
 
 On a hybrid machine the Intel GPU drives the desktop; run a program on the
 NVIDIA GPU with `prime-run <command>`.

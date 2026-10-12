@@ -7,3 +7,4 @@ LOCAL_AI=yes           # ollama + llama.cpp containers on the GPU
 DOCKER_ON_DEMAND=no    # yes: Docker starts on first use instead of at boot
 ZRAM=no                # yes: compressed swap in RAM, for low-memory machines
 EXTRA_PACKAGES=""
+KERNEL_PARAMS=""        # extra kernel command line options, kept in GRUB

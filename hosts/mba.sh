@@ -9,3 +9,6 @@ LOCAL_AI=no
 DOCKER_ON_DEMAND=yes
 ZRAM=yes
 EXTRA_PACKAGES="broadcom-sta-dkms"
+# Without this the SSD isn't detected (also needed at the installer's boot
+# menu: press e and add it after the "---").
+KERNEL_PARAMS="intel_iommu=off"
