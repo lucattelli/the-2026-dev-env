@@ -1,0 +1,34 @@
+#!/bin/sh
+# First boot on a fresh Debian install, before sudo and git exist.
+# Runs as root: installs sudo and git, adds the user to the sudo group,
+# clones this repo into the user's home and starts devenv-setup as the user.
+#
+# Usage, as your normal user (asks for the root password):
+#   wget -qO- https://raw.githubusercontent.com/lucattelli/the-2026-dev-env/main/bin/devenv-bootstrap | su - -c "sh -s $USER"
+set -eu
+
+url=https://github.com/lucattelli/the-2026-dev-env
+user="${1:-}"
+
+[ "$(id -u)" -eq 0 ] || { echo "Run as root, see the usage line at the top."; exit 1; }
+if [ -z "$user" ] || ! id "$user" >/dev/null 2>&1 || [ "$user" = root ]; then
+    echo "Pass your normal user: ... | su - -c \"sh -s \$USER\""
+    exit 1
+fi
+home="$(getent passwd "$user" | cut -d: -f6)"
+repo="$home/the-2026-dev-env"
+
+echo "==> sudo and git"
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y sudo git
+usermod -aG sudo "$user"
+
+if [ ! -d "$repo/.git" ]; then
+    echo "==> Cloning $url into $repo"
+    runuser -l "$user" -c "git clone $url '$repo'"
+fi
+
+echo "==> Starting devenv-setup as $user"
+# sg starts it with the sudo group already active, so no logout or reboot is
+# needed first. Input comes from the terminal, not from the wget pipe.
+exec runuser -l "$user" -c "sg sudo -c '$repo/bin/devenv-setup'" < /dev/tty
