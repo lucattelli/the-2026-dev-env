@@ -210,6 +210,36 @@ EOT
     sudo systemctl restart docker
 fi
 
+step "Locale (English messages, Brazilian formats) and keyboard"
+# Messages in English; numbers, dates, currency, paper and units from pt_BR.
+changed=no
+for loc in en_US.UTF-8 pt_BR.UTF-8; do
+    if ! grep -q "^$loc UTF-8" /etc/locale.gen; then
+        sudo sed -i "s/^# *$loc UTF-8/$loc UTF-8/" /etc/locale.gen
+        grep -q "^$loc UTF-8" /etc/locale.gen || echo "$loc UTF-8" | sudo tee -a /etc/locale.gen >/dev/null
+        changed=yes
+    fi
+done
+[ "$changed" = yes ] && sudo locale-gen
+if write_root /etc/default/locale << 'EOT'
+LANG=en_US.UTF-8
+LC_NUMERIC=pt_BR.UTF-8
+LC_TIME=pt_BR.UTF-8
+LC_MONETARY=pt_BR.UTF-8
+LC_PAPER=pt_BR.UTF-8
+LC_MEASUREMENT=pt_BR.UTF-8
+EOT
+then later "Log out and back in for the Brazilian number, date and currency formats."; fi
+# US keyboard with accents on AltGr (AltGr+' then a = á, AltGr+, = ç);
+# quotes stay normal keys. Profiles can override.
+kb_layout="${KEYBOARD_LAYOUT:-us}"
+kb_variant="${KEYBOARD_VARIANT:-altgr-intl}"
+if ! grep -q "^XKBVARIANT=\"$kb_variant\"" /etc/default/keyboard 2>/dev/null \
+    || ! grep -q "^XKBLAYOUT=\"$kb_layout\"" /etc/default/keyboard 2>/dev/null; then
+    sudo localectl set-x11-keymap "$kb_layout" "" "$kb_variant"
+    note "keyboard: $kb_layout ($kb_variant)"
+fi
+
 step "Vial keyboard access (udev)"
 gid="$(id -g)"
 if write_root /etc/udev/rules.d/99-vial.rules << EOT
