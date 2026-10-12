@@ -243,10 +243,18 @@ then later "Log out and back in for the Brazilian number, date and currency form
 # ' then space types a plain quote). Profiles can override.
 kb_layout="${KEYBOARD_LAYOUT:-us}"
 kb_variant="${KEYBOARD_VARIANT:-intl}"
-if ! grep -q "^XKBVARIANT=\"$kb_variant\"" /etc/default/keyboard 2>/dev/null \
-    || ! grep -q "^XKBLAYOUT=\"$kb_layout\"" /etc/default/keyboard 2>/dev/null; then
-    sudo localectl set-x11-keymap "$kb_layout" "" "$kb_variant"
-    note "keyboard: $kb_layout ($kb_variant)"
+# Debian's keyboard configuration, read by X11 and the console. Written
+# directly: localectl goes through D-Bus and can fail with "Access denied".
+if write_root /etc/default/keyboard << EOT
+XKBMODEL="pc105"
+XKBLAYOUT="$kb_layout"
+XKBVARIANT="$kb_variant"
+XKBOPTIONS=""
+BACKSPACE="guess"
+EOT
+then
+    sudo udevadm trigger --subsystem-match=input --action=change
+    note "keyboard: $kb_layout ($kb_variant), applies from the next login"
 fi
 
 step "Vial keyboard access (udev)"
