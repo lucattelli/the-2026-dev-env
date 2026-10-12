@@ -53,7 +53,7 @@ link() {
 [ "$(id -u)" -ne 0 ] || { echo "Run as your user, not root."; exit 1; }
 if ! has sudo || ! id -nG | grep -qw sudo; then
     echo "Your user needs sudo. As root (installed with a root password):"
-    echo "  su -c \"apt install -y sudo git && usermod -aG sudo $USER\""
+    echo "  su - -c \"apt install -y sudo git && usermod -aG sudo $USER\""
     echo "Then log out and back in, and run devenv-setup again."
     exit 1
 fi
