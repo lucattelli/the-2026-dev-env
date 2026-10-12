@@ -230,10 +230,10 @@ LC_PAPER=pt_BR.UTF-8
 LC_MEASUREMENT=pt_BR.UTF-8
 EOT
 then later "Log out and back in for the Brazilian number, date and currency formats."; fi
-# US keyboard with accents on AltGr (AltGr+' then a = á, AltGr+, = ç);
-# quotes stay normal keys. Profiles can override.
+# US international keyboard with dead keys (' then a = á, ' then c = ç;
+# ' then space types a plain quote). Profiles can override.
 kb_layout="${KEYBOARD_LAYOUT:-us}"
-kb_variant="${KEYBOARD_VARIANT:-altgr-intl}"
+kb_variant="${KEYBOARD_VARIANT:-intl}"
 if ! grep -q "^XKBVARIANT=\"$kb_variant\"" /etc/default/keyboard 2>/dev/null \
     || ! grep -q "^XKBLAYOUT=\"$kb_layout\"" /etc/default/keyboard 2>/dev/null; then
     sudo localectl set-x11-keymap "$kb_layout" "" "$kb_variant"
