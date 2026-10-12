@@ -47,9 +47,10 @@ step by step.
 ## Locale and keyboard
 
 Every machine uses English messages with Brazilian formats (numbers like
-1.234,56, dates like 12/10/2026, R$, A4, metric) and a US keyboard with
-accents on AltGr (`us`, variant `altgr-intl`): AltGr+`'` then `a` gives
-`á`, AltGr+`,` gives `ç`, and quotes stay normal keys. In the installer pick
+1.234,56, dates like 12/10/2026, R$, A4, metric) and a US international
+keyboard with dead keys (`us`, variant `intl`): `'` then `a` gives `á`,
+`'` then `c` gives `ç`, and `'` then space types a plain quote (same for
+`"`, `` ` ``, `~` and `^`). In the installer pick
 English, location Brazil (other → South America) and `en_US.UTF-8`;
 `devenv-setup` adds the `pt_BR` formats and the keyboard variant. A profile
 can override the keyboard with `KEYBOARD_LAYOUT` and `KEYBOARD_VARIANT`.
