@@ -362,20 +362,26 @@ fi
 step "System snapshots (Timeshift)"
 # The whole config is managed here, like the dotfiles: rsync onto the system
 # partition, daily (keep 5) and weekly (keep 2), /home and /root excluded.
-# Changes made in the GUI are reset on the next run. Built from the package's
-# default.json so the keys match the installed version.
+# Changes made in the GUI to these settings are reset on the next run.
 # Timeshift itself writes or removes /etc/cron.d/timeshift-hourly from these
 # settings every time it runs, so the cron job isn't written here.
 apt_install cron
 ts=/etc/timeshift/timeshift.json
-new_ts="$(sudo jq --arg uuid "$(findmnt -no UUID /)" '
+# Applied on top of the current file (or default.json the first time) and
+# compared as JSON, because Timeshift rewrites the file in its own format
+# and adds keys of its own; only a real settings change is written.
+src="$ts"; sudo test -f "$ts" || src=/etc/timeshift/default.json
+new_ts="$(sudo jq -S --arg uuid "$(findmnt -no UUID /)" '
     .backup_device_uuid = $uuid | .parent_device_uuid = "" |
     .do_first_run = "false" | .btrfs_mode = "false" | .stop_cron_emails = "true" |
     .schedule_monthly = "false" | .schedule_weekly = "true" | .schedule_daily = "true" |
     .schedule_hourly = "false" | .schedule_boot = "false" |
     .count_weekly = "2" | .count_daily = "5" |
-    .exclude = ["/home/**", "/root/**"]' /etc/timeshift/default.json)"
-printf '%s\n' "$new_ts" | write_root "$ts" && note "configured: rsync, daily 5, weekly 2, /home excluded"
+    .exclude = ["/home/**", "/root/**"]' "$src")"
+if [ "$new_ts" != "$(sudo jq -S . "$ts" 2>/dev/null)" ]; then
+    printf '%s\n' "$new_ts" | sudo tee "$ts" >/dev/null
+    note "configured: rsync, daily 5, weekly 2, /home excluded"
+fi
 # Snapshots live in /timeshift/snapshots on the system partition (set above).
 # Checked on disk: parsing 'timeshift --list' missed it on the MBA.
 if [ -z "$(sudo find /timeshift/snapshots -mindepth 1 -maxdepth 1 2>/dev/null)" ]; then
