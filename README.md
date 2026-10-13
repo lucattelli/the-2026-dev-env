@@ -532,15 +532,17 @@ Note: membership in the `docker` group is equivalent to root access.
 On ext4, Timeshift works in rsync mode: it copies the system (not `/home`)
 and each new snapshot only stores the files that changed.
 
-`devenv-setup` configures it (only if it isn't configured yet) and takes
-the first snapshot at the end of the run:
+`devenv-setup` configures it and takes the first snapshot if there is
+none yet:
 
 - **Type:** rsync.
-- **Location:** the system partition. That protects against a bad update,
-  but not against a dead drive. To keep snapshots on another disk, change
-  the location in the GUI; the setup won't overwrite it.
-- **Schedule:** daily (keep 5) and weekly (keep 2), no boot snapshots, run
-  hourly from `/etc/cron.d/timeshift-hourly`.
+- **Location:** the system partition, unless one is already chosen. That
+  protects against a bad update, but not against a dead drive. To keep
+  snapshots on another disk, change the location in the GUI; the setup
+  keeps it.
+- **Schedule:** daily (keep 5) and weekly (keep 2), no boot snapshots.
+  Re-running the setup puts these back if they were changed in the GUI.
+  Timeshift itself adds the hourly check to `/etc/cron.d/timeshift-hourly`.
 - **Users:** `/home` and `/root` excluded. Code lives in git, config in this
   repo.
 
