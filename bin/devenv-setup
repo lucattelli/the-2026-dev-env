@@ -111,7 +111,6 @@ step "Kernel and firmware ($KERNEL)"
 if [ "$KERNEL" = backports ]; then
     sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -t trixie-backports \
         linux-image-amd64 linux-headers-amd64 firmware-linux-nonfree
-    later "After the reboot you run the backports kernel; the stable one stays in GRUB's advanced options as a fallback."
 else
     apt_install linux-headers-amd64 firmware-linux-nonfree
 fi
@@ -164,8 +163,7 @@ if [ "$GPU" != none ]; then
 options nvidia NVreg_PreserveVideoMemoryAllocations=1 NVreg_TemporaryFilePath=/var/tmp
 EOT
     then sudo update-initramfs -u; fi
-    later "After the reboot, check the NVIDIA driver with nvidia-smi."
-    if [ "$HYBRID_GPU" = yes ]; then
+    if [ "$HYBRID_GPU" = yes ] && ! nvidia-smi >/dev/null 2>&1; then
         later "Hybrid graphics: the Intel GPU drives the desktop; run programs on the NVIDIA GPU with 'prime-run <command>'."
     fi
 fi
@@ -175,7 +173,7 @@ if has mokutil && mokutil --sb-state 2>/dev/null | grep -q enabled \
     step "Secure Boot: enroll the DKMS signing key"
     note "Choose a one-time password; on the next boot pick 'Enroll MOK' and type it."
     sudo mokutil --import /var/lib/dkms/mok.pub
-    later "On the next boot, the blue MOK screen appears: Enroll MOK -> Continue -> type the password."
+    mok_imported=yes
 fi
 
 step "Docker"
@@ -196,7 +194,7 @@ apt_install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-co
 if ! id -nG | grep -qw docker; then
     sudo usermod -aG docker "$USER"
 fi
-if [ "$DOCKER_ON_DEMAND" = yes ]; then
+if [ "$DOCKER_ON_DEMAND" = yes ] && systemctl is-enabled --quiet docker.service 2>/dev/null; then
     # The socket stays enabled, so the daemon starts on the first docker command.
     sudo systemctl disable --now docker.service containerd.service
     sudo systemctl enable docker.socket
@@ -240,7 +238,7 @@ LC_MONETARY=pt_BR.UTF-8
 LC_PAPER=pt_BR.UTF-8
 LC_MEASUREMENT=pt_BR.UTF-8
 EOT
-then note "locale: applies from the next login"; fi
+then note "locale: applies from the next login"; session_changed=yes; fi
 # US international keyboard with dead keys (' then a = á, ' then c = ç;
 # ' then space types a plain quote). Profiles can override.
 kb_layout="${KEYBOARD_LAYOUT:-us}"
@@ -257,6 +255,7 @@ EOT
 then
     sudo udevadm trigger --subsystem-match=input --action=change
     note "keyboard: $kb_layout ($kb_variant), applies from the next login"
+    session_changed=yes
 fi
 
 step "Vial keyboard access (udev)"
@@ -351,11 +350,13 @@ elif [ "$LOCAL_AI" = yes ] && [ "$GPU" != none ]; then
             ghcr.io/ggml-org/llama.cpp:server-cuda \
             --fim-qwen-1.5b-default --host 0.0.0.0
     fi
-    later "Pull a chat model: docker exec -it ollama ollama pull qwen2.5-coder:7b; then: llm models default qwen2.5-coder:7b"
+    if [ -z "$(sudo docker exec ollama ollama list 2>/dev/null | tail -n +2)" ]; then
+        later "Pull a chat model: docker exec -it ollama ollama pull qwen2.5-coder:7b; then: llm models default qwen2.5-coder:7b"
+    fi
 fi
 
 # ---------------------------------------------------------------------------
-# What's left
+# Snapshots, keys and logins
 # ---------------------------------------------------------------------------
 
 step "System snapshots (Timeshift)"
@@ -382,22 +383,75 @@ if [ -z "$(sudo find /timeshift/snapshots -mindepth 1 -maxdepth 1 2>/dev/null)" 
     sudo timeshift --create --scripted --comments "devenv-setup: first snapshot"
 fi
 
-step "Done. Still to do by hand:"
-later "Bitwarden CLI: bw login, then 'devenv-keys' to restore this machine's SSH keys."
-later "Switch the repo to SSH: git -C '$repo' remote set-url origin git@github.com:lucattelli/the-2026-dev-env.git"
-later "Log in: gh auth login, claude, codex."
-later "Open nvim once to install plugins and language servers."
-later "Check everything: devenv-check (in a new terminal; 'todo' lines are the manual steps above)."
-# Rebooting first applies everything at once: new drivers (Wi-Fi, NVIDIA),
-# kernel parameters, groups, PATH, locale and keyboard.
-first=("Reboot.")
-case " $EXTRA_PACKAGES " in
-    *" broadcom-sta-dkms "*)
-        first+=("Connect to Wi-Fi: nmcli device wifi connect '<network>' --ask (this card is WPA2 only).") ;;
-esac
-todo=("${first[@]}" "${todo[@]}")
-i=1
-for t in "${todo[@]}"; do
-    printf '  %d. %s\n' "$i" "$t"
-    i=$((i + 1))
+step "SSH keys and GitHub"
+mise_exec() { "$HOME/.local/bin/mise" exec -- "$@"; }
+ask() { local a; read -rp "    $1 [Y/n] " a; [[ -z "$a" || "$a" =~ ^[Yy] ]]; }
+if [ ! -f "$HOME/.ssh/id_ed25519" ]; then
+    if ask "Restore this machine's SSH keys from Bitwarden now?"; then
+        mise_exec "$repo/bin/devenv-keys" || note "devenv-keys failed; run it again later"
+    fi
+fi
+origin="$(git -C "$repo" remote get-url origin)"
+if [ -f "$HOME/.ssh/id_ed25519" ] && [[ "$origin" == https://github.com/* ]]; then
+    git -C "$repo" remote set-url origin git@github.com:lucattelli/the-2026-dev-env.git
+    note "repo remote switched to SSH"
+fi
+if ! mise_exec gh auth status >/dev/null 2>&1; then
+    if ask "Log in to the GitHub CLI now (opens the browser)?"; then
+        mise_exec gh auth login --hostname github.com --git-protocol ssh --skip-ssh-key --web ||
+            note "gh login failed; run 'gh auth login' later"
+    fi
+fi
+
+# ---------------------------------------------------------------------------
+# What's left: only what is still pending on this machine, so a re-run on a
+# finished machine prints nothing to do.
+# ---------------------------------------------------------------------------
+
+reasons=()
+newest="$(find /boot -maxdepth 1 -name 'vmlinuz-*' -printf '%f\n' | sed 's/^vmlinuz-//' | sort -V | tail -1)"
+[ -n "$newest" ] && [ "$(uname -r)" != "$newest" ] && reasons+=("kernel $newest")
+for p in ${KERNEL_PARAMS:-}; do
+    grep -qw -- "$p" /proc/cmdline || { reasons+=("kernel parameters"); break; }
 done
+case " $EXTRA_PACKAGES " in *" broadcom-sta-dkms "*)
+    grep -q '^wl ' /proc/modules || reasons+=("Wi-Fi driver") ;;
+esac
+[ "$GPU" != none ] && ! nvidia-smi >/dev/null 2>&1 && reasons+=("NVIDIA driver")
+for g in sudo docker; do
+    if id -nG "$USER" | grep -qw "$g" && ! id -nG | grep -qw "$g"; then
+        reasons+=("$g group"); break
+    fi
+done
+[ "${session_changed:-}" = yes ] && reasons+=("locale and keyboard")
+[ "${mok_imported:-}" = yes ] && reasons+=("Secure Boot key: on the blue MOK screen pick Enroll MOK -> Continue -> type the password")
+
+pending=()
+if [ "${#reasons[@]}" -gt 0 ]; then
+    pending+=("Reboot ($(IFS=,; echo "${reasons[*]}" | sed 's/,/, /g')).")
+fi
+case " $EXTRA_PACKAGES " in *" broadcom-sta-dkms "*)
+    nmcli -t -f TYPE,STATE device 2>/dev/null | grep -q '^wifi:connected' ||
+        pending+=("Connect to Wi-Fi: nmcli device wifi connect '<network>' --ask (this card is WPA2 only).") ;;
+esac
+pending+=("${todo[@]}")
+[ -f "$HOME/.ssh/id_ed25519" ] ||
+    pending+=("Restore SSH keys: devenv-keys (logs in to Bitwarden), then run devenv-setup again.")
+mise_exec gh auth status >/dev/null 2>&1 || pending+=("Log in to the GitHub CLI: gh auth login")
+[ -f "$HOME/.claude/.credentials.json" ] || pending+=("Log in to Claude Code: claude")
+[ -f "$HOME/.codex/auth.json" ] || pending+=("Log in to Codex: codex")
+[ -n "$(find "$HOME/.local/share/nvim/site/pack" -mindepth 3 -maxdepth 3 2>/dev/null)" ] ||
+    pending+=("Open nvim once to install plugins and language servers.")
+
+if [ "${#pending[@]}" -eq 0 ]; then
+    step "Done. Nothing left to do by hand."
+    note "devenv-check shows the full state."
+else
+    step "Done. Still to do by hand:"
+    pending+=("Check everything: devenv-check (in a new terminal).")
+    i=1
+    for t in "${pending[@]}"; do
+        printf '  %d. %s\n' "$i" "$t"
+        i=$((i + 1))
+    done
+fi

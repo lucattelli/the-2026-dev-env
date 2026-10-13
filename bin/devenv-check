@@ -119,6 +119,9 @@ check "ssh adds keys to the agent" 'grep -qi "^AddKeysToAgent yes" ~/.ssh/config
 manual "GitHub accepts the SSH key" 'ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new -T git@github.com 2>&1 | grep -q "successfully authenticated"'
 manual "repo remote uses SSH" 'git -C "$repo" remote get-url origin | grep -q "^git@github.com:"'
 manual "gh logged in" 'gh auth status'
+manual "Claude Code logged in" '[ -f ~/.claude/.credentials.json ]'
+manual "Codex logged in" '[ -f ~/.codex/auth.json ]'
+manual "nvim plugins installed" '[ -n "$(find ~/.local/share/nvim/site/pack -mindepth 3 -maxdepth 3 2>/dev/null)" ]'
 
 if [ "$LOCAL_AI" = yes ] && [ "$GPU" != none ]; then
     section "Local AI"
