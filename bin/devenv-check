@@ -101,7 +101,7 @@ section "Dotfiles"
 declare -A targets=(
     [$HOME/.config/nvim]=nvim [$HOME/.config/tmux]=tmux [$HOME/.config/mise]=mise
     [$HOME/.config/alacritty]=alacritty [$HOME/.claude/CLAUDE.md]=claude/CLAUDE.md
-    [$HOME/.codex/AGENTS.md]=claude/CLAUDE.md
+    [$HOME/.codex/AGENTS.md]=claude/CLAUDE.md [$HOME/.XCompose]=x11/XCompose
 )
 [ -d "$repo/lxqt" ] && targets[$HOME/.config/lxqt]=lxqt
 for l in "${!targets[@]}"; do
