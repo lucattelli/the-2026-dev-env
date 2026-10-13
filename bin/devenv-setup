@@ -358,11 +358,43 @@ fi
 # What's left
 # ---------------------------------------------------------------------------
 
+step "System snapshots (Timeshift)"
+# Same choices as the setup wizard would get: rsync onto the system
+# partition, daily (keep 5) and weekly (keep 2), /home and /root excluded.
+# Only written when Timeshift isn't configured yet, so changes made later in
+# the GUI are kept. Built from the package's default.json so the keys match
+# the installed version.
+ts=/etc/timeshift/timeshift.json
+if ! sudo test -f "$ts"; then
+    root_uuid="$(findmnt -no UUID /)"
+    sudo jq --arg uuid "$root_uuid" '
+        .backup_device_uuid = $uuid | .parent_device_uuid = "" |
+        .do_first_run = "false" | .btrfs_mode = "false" | .stop_cron_emails = "true" |
+        .schedule_monthly = "false" | .schedule_weekly = "true" | .schedule_daily = "true" |
+        .schedule_hourly = "false" | .schedule_boot = "false" |
+        .count_weekly = "2" | .count_daily = "5" |
+        .exclude = ["/home/**", "/root/**"]' /etc/timeshift/default.json |
+        sudo tee "$ts" >/dev/null
+    note "configured: rsync on / ($root_uuid), daily 5, weekly 2"
+    configured_timeshift=yes
+fi
+# Scheduled snapshots run from cron; the GUI normally writes this file.
+apt_install cron
+write_root /etc/cron.d/timeshift-hourly <<'CRON' && note "cron job for scheduled snapshots"
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+MAILTO=""
+0 * * * * root timeshift --check --scripted
+CRON
+if [ "${configured_timeshift:-}" = yes ]; then
+    note "first snapshot (a few minutes)"
+    sudo timeshift --create --scripted --comments "devenv-setup: first snapshot"
+fi
+
 step "Done. Still to do by hand:"
 later "Bitwarden CLI: bw login, then 'devenv-keys' to restore this machine's SSH keys."
 later "Switch the repo to SSH: git -C '$repo' remote set-url origin git@github.com:lucattelli/the-2026-dev-env.git"
 later "Log in: gh auth login, claude, codex."
-later "Timeshift: open it from the menu and run the setup wizard (rsync)."
 later "Open nvim once to install plugins and language servers."
 later "Check everything: devenv-check (in a new terminal; 'todo' lines are the manual steps above)."
 # Rebooting first applies everything at once: new drivers (Wi-Fi, NVIDIA),

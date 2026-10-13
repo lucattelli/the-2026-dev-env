@@ -76,7 +76,6 @@ wget -qO /tmp/devenv-bootstrap https://raw.githubusercontent.com/lucattelli/the-
   - `bw login`, then `devenv-keys` (restores this machine's SSH keys).
   - Switch the repo remote to SSH.
   - Log in: `gh auth login`, `claude`, `codex`.
-  - Timeshift setup wizard.
   - Open `nvim` once.
   - Run `devenv-check` (see below).
 
@@ -533,25 +532,21 @@ Note: membership in the `docker` group is equivalent to root access.
 On ext4, Timeshift works in rsync mode: it copies the system (not `/home`)
 and each new snapshot only stores the files that changed.
 
-```sh
-sudo apt install timeshift
-```
+`devenv-setup` configures it (only if it isn't configured yet) and takes
+the first snapshot at the end of the run:
 
-Open Timeshift from the menu and go through the setup wizard:
+- **Type:** rsync.
+- **Location:** the system partition. That protects against a bad update,
+  but not against a dead drive. To keep snapshots on another disk, change
+  the location in the GUI; the setup won't overwrite it.
+- **Schedule:** daily (keep 5) and weekly (keep 2), no boot snapshots, run
+  hourly from `/etc/cron.d/timeshift-hourly`.
+- **Users:** `/home` and `/root` excluded. Code lives in git, config in this
+  repo.
 
-- **Type:** RSYNC.
-- **Location:** a partition on a different disk than the system, if there
-  is one. Snapshots on the same disk protect against a bad update, but not
-  against a dead drive. Timeshift creates a `timeshift` folder at the root
-  of the chosen partition.
-- **Schedule:** daily (keep 5) and weekly (keep 2). Leave "boot" off.
-- **Users:** keep `/home` excluded. Code lives in git, config in this repo.
-
-Close the wizard before using the command line, since only one instance can
-run at a time. Create the first snapshot and check it:
+Check it:
 
 ```sh
-sudo timeshift --create --comments "new system configured"
 sudo timeshift --list
 ```
 

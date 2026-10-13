@@ -59,7 +59,8 @@ if [ -n "${DISPLAY:-}" ]; then
 fi
 check "Bluetooth not blocked" '! rfkill list bluetooth | grep -q "Soft blocked: yes"'
 check "Vial udev rule" '[ -f /etc/udev/rules.d/99-vial.rules ]'
-manual "Timeshift configured" '[ -f /etc/timeshift/timeshift.json ]'
+check "Timeshift configured" '[ -f /etc/timeshift/timeshift.json ]'
+check "Timeshift scheduled (cron)" '[ -f /etc/cron.d/timeshift-hourly ] && systemctl is-active cron'
 
 if [ "$GPU" != none ]; then
     section "NVIDIA"
