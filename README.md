@@ -60,7 +60,7 @@ Screen by screen:
 Log in as your user, open a terminal and run:
 
 ```sh
-wget -qO- https://raw.githubusercontent.com/lucattelli/the-2026-dev-env/main/bin/devenv-bootstrap | su - -c "sh -s $USER"
+wget -qO /tmp/devenv-bootstrap https://raw.githubusercontent.com/lucattelli/the-2026-dev-env/main/bin/devenv-bootstrap && su - -c "sh /tmp/devenv-bootstrap $USER"
 ```
 
 - Asks for the **root** password, installs `sudo` and `git`, adds you to

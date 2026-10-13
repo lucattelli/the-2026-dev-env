@@ -4,7 +4,7 @@
 # clones this repo into the user's home and starts devenv-setup as the user.
 #
 # Usage, as your normal user (asks for the root password):
-#   wget -qO- https://raw.githubusercontent.com/lucattelli/the-2026-dev-env/main/bin/devenv-bootstrap | su - -c "sh -s $USER"
+#   wget -qO /tmp/devenv-bootstrap https://raw.githubusercontent.com/lucattelli/the-2026-dev-env/main/bin/devenv-bootstrap && su - -c "sh /tmp/devenv-bootstrap $USER"
 set -eu
 
 url=https://github.com/lucattelli/the-2026-dev-env
@@ -12,7 +12,7 @@ user="${1:-}"
 
 [ "$(id -u)" -eq 0 ] || { echo "Run as root, see the usage line at the top."; exit 1; }
 if [ -z "$user" ] || ! id "$user" >/dev/null 2>&1 || [ "$user" = root ]; then
-    echo "Pass your normal user: ... | su - -c \"sh -s \$USER\""
+    echo "Pass your normal user: su - -c \"sh /tmp/devenv-bootstrap \$USER\""
     exit 1
 fi
 home="$(getent passwd "$user" | cut -d: -f6)"
@@ -30,5 +30,5 @@ fi
 
 echo "==> Starting devenv-setup as $user"
 # sg starts it with the sudo group already active, so no logout or reboot is
-# needed first. Input comes from the terminal, not from the wget pipe.
-exec runuser -l "$user" -c "sg sudo -c '$repo/bin/devenv-setup'" < /dev/tty
+# needed first.
+exec runuser -l "$user" -c "sg sudo -c '$repo/bin/devenv-setup'"
