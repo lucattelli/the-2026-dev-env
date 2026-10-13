@@ -1,0 +1,8 @@
+# Linked as ~/.XCompose by devenv-setup.
+# Keep the locale's compose table, but make the us-intl dead acute give the
+# Brazilian cedilla: ' then c = ç (the default table gives ć).
+# Read by Qt/LXQt, GTK, Alacritty and Chromium at login.
+include "%L"
+
+<dead_acute> <c> : "ç" ccedilla
+<dead_acute> <C> : "Ç" Ccedilla

@@ -291,6 +291,9 @@ link "$repo/alacritty" "$HOME/.config/alacritty"
 link "$repo/lxqt" "$HOME/.config/lxqt"
 link "$repo/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
 link "$repo/claude/CLAUDE.md" "$HOME/.codex/AGENTS.md"
+# ' + c = ç with the us-intl keyboard (applies from the next login).
+[ "$(readlink "$HOME/.XCompose" 2>/dev/null)" = "$repo/x11/XCompose" ] || session_changed=yes
+link "$repo/x11/XCompose" "$HOME/.XCompose"
 line="[ -f \"$repo/bash/bashrc\" ] && . \"$repo/bash/bashrc\""
 grep -qF "$repo/bash/bashrc" "$HOME/.bashrc" 2>/dev/null || {
     printf '\n%s\n' "$line" >> "$HOME/.bashrc"

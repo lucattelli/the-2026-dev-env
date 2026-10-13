@@ -15,6 +15,7 @@ bin/         helper scripts, added to PATH by the bash snippet
 hosts/       per-machine hardware profiles used by devenv-setup
 lxqt/        LXQt settings (panel, shortcuts, power), linked as ~/.config/lxqt
 starship/    prompt config
+x11/         XCompose (' + c = ç), linked as ~/.XCompose
 ```
 
 ## Quick start
@@ -110,6 +111,8 @@ Set by `devenv-setup` on every machine:
   (R$), A4 paper, metric units.
 - Keyboard `us`, variant `intl` (dead keys): `'` + `a` = `á`, `'` + `c` =
   `ç`, `~` + `a` = `ã`, `'` + space = `'`. Same for `"`, `` ` ``, `~`, `^`.
+- `'` + `c` gives `ć` in the default compose table; `x11/XCompose` (linked
+  as `~/.XCompose`) changes it to `ç`. Applies from the next login.
 - A profile can override the keyboard with `KEYBOARD_LAYOUT` and
   `KEYBOARD_VARIANT`.
 
