@@ -6,7 +6,8 @@
 #   todo    a manual step from the setup checklist that isn't done yet
 #
 # Usage: devenv-check [hostname]   (defaults to this machine's hostname)
-set -uo pipefail
+# No pipefail: 'cmd | grep -q' would fail when grep exits early (SIGPIPE).
+set -u
 
 repo="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 host="${1:-$(hostname)}"
@@ -16,7 +17,7 @@ KERNEL_PARAMS="" EXTRA_PACKAGES="" KEYBOARD_VARIANT=""
 . "$profile"
 
 # Same PATH a new login shell gets, so this works from any terminal.
-export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.local/share/mise/shims:$HOME/.opencode/bin:$repo/bin:$PATH"
+export PATH="/usr/sbin:/sbin:$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.local/share/mise/shims:$HOME/.opencode/bin:$repo/bin:$PATH"
 
 fails=0 todos=0
 ok()   { echo "ok      $1"; }
@@ -86,7 +87,7 @@ done
 check "Bitwarden desktop (Flatpak)" 'flatpak info com.bitwarden.desktop'
 
 section "Tools"
-for c in git rg fdfind fzf bat tmux jq xclip mise uv rustup cargo rust-analyzer \
+for c in git rg fdfind fzf batcat tmux jq xclip mise uv rustup cargo rust-analyzer \
          nvim starship zoxide gh delta lazygit lazydocker dust glow go node tldr \
          hyperfine bw codex claude opencode devenv-update devenv-keys; do
     check "$c" 'command -v "$c"'
