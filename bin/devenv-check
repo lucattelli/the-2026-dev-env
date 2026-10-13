@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+# Checks that devenv-setup did its job on this machine, using the same host
+# profile (hosts/<hostname>.sh). Read-only, no sudo needed.
+#   ok      done
+#   FAIL    should be done by devenv-setup; re-run it or look into it
+#   todo    a manual step from the setup checklist that isn't done yet
+#
+# Usage: devenv-check [hostname]   (defaults to this machine's hostname)
+set -uo pipefail
+
+repo="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+host="${1:-$(hostname)}"
+profile="$repo/hosts/$host.sh"
+[ -f "$profile" ] || { echo "No profile for '$host' in $repo/hosts/"; exit 1; }
+KERNEL_PARAMS="" EXTRA_PACKAGES="" KEYBOARD_VARIANT=""
+. "$profile"
+
+# Same PATH a new login shell gets, so this works from any terminal.
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.local/share/mise/shims:$HOME/.opencode/bin:$repo/bin:$PATH"
+
+fails=0 todos=0
+ok()   { echo "ok      $1"; }
+check() { # check <label> <command>: FAIL if the command fails
+    if eval "$2" >/dev/null 2>&1; then ok "$1"; else echo "FAIL    $1"; fails=$((fails + 1)); fi
+}
+manual() { # manual <label> <command>: todo if the command fails
+    if eval "$2" >/dev/null 2>&1; then ok "$1"; else echo "todo    $1"; todos=$((todos + 1)); fi
+}
+section() { echo; echo "== $1"; }
+
+echo "Checking '$host': kernel=$KERNEL gpu=$GPU hybrid=$HYBRID_GPU local_ai=$LOCAL_AI"
+
+section "System"
+check "Debian 13 (trixie)" '. /etc/os-release && [ "$VERSION_CODENAME" = trixie ]'
+if [ "$KERNEL" = backports ]; then
+    check "backports kernel running ($(uname -r))" '! uname -r | grep -q "^6\.12\."'
+else
+    check "stable 6.12 kernel running ($(uname -r))" 'uname -r | grep -q "^6\.12\."'
+fi
+for p in $KERNEL_PARAMS; do
+    check "kernel parameter $p" 'grep -qw -- "$p" /proc/cmdline'
+done
+check "APT sources with backports" 'grep -q trixie-backports /etc/apt/sources.list.d/debian.sources'
+check "firmware-linux-nonfree" 'dpkg -s firmware-linux-nonfree'
+for p in $EXTRA_PACKAGES; do
+    check "package $p" 'dpkg -s "$p"'
+done
+case " $EXTRA_PACKAGES " in *" broadcom-sta-dkms "*)
+    check "Broadcom Wi-Fi driver loaded (wl)" 'lsmod | grep -q "^wl "' ;;
+esac
+manual "network connected" 'nmcli -t -f STATE general | grep -q "^connected"'
+[ "$ZRAM" = yes ] && check "zram swap active" 'swapon --show | grep -q zram'
+check "user in sudo group" 'id -nG | grep -qw sudo'
+check "locale en_US with pt_BR formats" 'locale | grep -q "LANG=en_US.UTF-8" && locale | grep -q "LC_TIME=pt_BR.UTF-8"'
+check "keyboard ${KEYBOARD_LAYOUT:-us} ${KEYBOARD_VARIANT:-intl}" 'grep -q "XKBVARIANT=\"${KEYBOARD_VARIANT:-intl}\"" /etc/default/keyboard'
+if [ -n "${DISPLAY:-}" ]; then
+    check "keyboard active in X" 'setxkbmap -query | grep -q "variant: *${KEYBOARD_VARIANT:-intl}"'
+fi
+check "Bluetooth not blocked" '! rfkill list bluetooth | grep -q "Soft blocked: yes"'
+check "Vial udev rule" '[ -f /etc/udev/rules.d/99-vial.rules ]'
+manual "Timeshift configured" '[ -f /etc/timeshift/timeshift.json ]'
+
+if [ "$GPU" != none ]; then
+    section "NVIDIA"
+    check "driver working (nvidia-smi)" 'nvidia-smi'
+    check "power settings (nvidia-power.conf)" '[ -f /etc/modprobe.d/nvidia-power.conf ]'
+    [ "$HYBRID_GPU" = yes ] && check "prime-run" 'command -v prime-run'
+fi
+
+section "Docker"
+check "user in docker group" 'id -nG | grep -qw docker'
+if [ "$DOCKER_ON_DEMAND" = yes ]; then
+    check "docker.socket enabled (starts on demand)" 'systemctl is-enabled docker.socket'
+    check "docker.service not started at boot" '! systemctl is-enabled docker.service'
+fi
+check "docker daemon answers" 'docker info'
+if [ "$GPU" != none ] && [ "$LOCAL_AI" = yes ]; then
+    check "NVIDIA Container Toolkit" 'command -v nvidia-ctk'
+fi
+
+section "Apps"
+check "Alacritty is the default terminal" 'update-alternatives --query x-terminal-emulator | grep -q "^Value: .*alacritty"'
+for c in libreoffice thunderbird chromium flatpak timeshift; do
+    check "$c" 'command -v "$c"'
+done
+check "Bitwarden desktop (Flatpak)" 'flatpak info com.bitwarden.desktop'
+
+section "Tools"
+for c in git rg fdfind fzf bat tmux jq xclip mise uv rustup cargo rust-analyzer \
+         nvim starship zoxide gh delta lazygit lazydocker dust glow go node tldr \
+         hyperfine bw codex claude opencode devenv-update devenv-keys; do
+    check "$c" 'command -v "$c"'
+done
+check "mise tools all installed" 'command -v mise && ! mise ls --missing 2>/dev/null | grep -q .'
+[ "$LOCAL_AI" = yes ] && check "llm" 'command -v llm'
+
+section "Dotfiles"
+declare -A targets=(
+    [$HOME/.config/nvim]=nvim [$HOME/.config/tmux]=tmux [$HOME/.config/mise]=mise
+    [$HOME/.config/alacritty]=alacritty [$HOME/.claude/CLAUDE.md]=claude/CLAUDE.md
+    [$HOME/.codex/AGENTS.md]=claude/CLAUDE.md
+)
+[ -d "$repo/lxqt" ] && targets[$HOME/.config/lxqt]=lxqt
+for l in "${!targets[@]}"; do
+    check "${l/#$HOME/\~} -> repo" '[ "$(readlink "$l")" = "$repo/${targets[$l]}" ]'
+done
+check "~/.bashrc sources the repo bashrc" 'grep -qF "$repo/bash/bashrc" ~/.bashrc'
+
+section "Git and keys"
+check "git name and email" 'git config --global user.name && git config --global user.email'
+check "git signs commits with SSH" '[ "$(git config --global gpg.format)" = ssh ] && [ "$(git config --global commit.gpgsign)" = true ]'
+manual "SSH key restored (devenv-keys)" '[ -f ~/.ssh/id_ed25519 ] && [ -f ~/.ssh/id_ed25519.pub ]'
+manual "GitHub accepts the SSH key" 'ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new -T git@github.com 2>&1 | grep -q "successfully authenticated"'
+manual "repo remote uses SSH" 'git -C "$repo" remote get-url origin | grep -q "^git@github.com:"'
+manual "gh logged in" 'gh auth status'
+
+if [ "$LOCAL_AI" = yes ] && [ "$GPU" != none ]; then
+    section "Local AI"
+    check "ollama container" 'docker inspect ollama'
+    check "llama-fim container" 'docker inspect llama-fim'
+fi
+
+echo
+echo "$fails failed, $todos manual steps to do."
+[ "$fails" -eq 0 ]

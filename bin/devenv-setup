@@ -355,6 +355,7 @@ later "Switch the repo to SSH: git -C '$repo' remote set-url origin git@github.c
 later "Log in: gh auth login, claude, codex."
 later "Timeshift: open it from the menu and run the setup wizard (rsync)."
 later "Open nvim once to install plugins and language servers."
+later "Check everything: devenv-check (in a new terminal; 'todo' lines are the manual steps above)."
 # Rebooting first applies everything at once: new drivers (Wi-Fi, NVIDIA),
 # kernel parameters, groups, PATH, locale and keyboard.
 first=("Reboot.")
