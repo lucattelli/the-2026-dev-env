@@ -375,7 +375,9 @@ new_ts="$(sudo jq --arg uuid "$(findmnt -no UUID /)" '
     .count_weekly = "2" | .count_daily = "5" |
     .exclude = ["/home/**", "/root/**"]' /etc/timeshift/default.json)"
 printf '%s\n' "$new_ts" | write_root "$ts" && note "configured: rsync, daily 5, weekly 2, /home excluded"
-if sudo timeshift --list --scripted 2>/dev/null | grep -q "No snapshots found"; then
+# Snapshots live in /timeshift/snapshots on the system partition (set above).
+# Checked on disk: parsing 'timeshift --list' missed it on the MBA.
+if [ -z "$(sudo find /timeshift/snapshots -mindepth 1 -maxdepth 1 2>/dev/null)" ]; then
     note "first snapshot (a few minutes)"
     sudo timeshift --create --scripted --comments "devenv-setup: first snapshot"
 fi
