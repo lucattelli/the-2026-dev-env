@@ -67,23 +67,26 @@ wget -qO /tmp/devenv-bootstrap https://raw.githubusercontent.com/lucattelli/the-
   the `sudo` group and clones this repo into `~/the-2026-dev-env`.
 - Then starts `devenv-setup` as you, through `sg sudo` so the `sudo` group
   is already active (no logout needed).
-- `devenv-setup` asks for **your** password once, then for git name and
-  email near the end.
-- Ends with a numbered checklist. Follow it in order:
-  - Reboot (loads Wi-Fi/NVIDIA drivers, kernel options, groups, locale,
-    keyboard).
-  - Connect to Wi-Fi, if the cable was only for the install.
-  - `bw login`, then `devenv-keys` (restores this machine's SSH keys).
-  - Switch the repo remote to SSH.
-  - Log in: `gh auth login`, `claude`, `codex`.
+- `devenv-setup` asks for **your** password once. Near the end it asks:
+  - git name and email (first run only);
+  - **Restore SSH keys from Bitwarden?** Yes logs in to Bitwarden (email,
+    master password, 2FA) and runs `devenv-keys`; the repo remote then
+    switches to SSH by itself;
+  - **Log in to the GitHub CLI?** Yes opens the browser.
+- Ends with a numbered list of **only what is still pending** on this
+  machine. A typical first run:
+  - Reboot, with the reason (new kernel, drivers, groups, locale…).
+  - Connect to Wi-Fi (MBA, after the reboot loads the driver).
+  - Log in: `claude`, `codex`.
   - Open `nvim` once.
-  - Run `devenv-check` (see below).
+  - Run `devenv-check`.
+- Re-run `devenv-setup` after the reboot. On a finished machine it ends with
+  "Nothing left to do by hand".
 
 To confirm a machine is set up, run `devenv-check` in a new terminal. It
 reads the same host profile and prints one line per item: `ok`, `FAIL`
 (something `devenv-setup` should have done; re-run it) or `todo` (a manual
-step from the checklist not done yet, such as `devenv-keys` or `gh auth
-login`). It's read-only and needs no sudo.
+step not done yet, such as a login). It's read-only and needs no sudo.
 
 Without the bootstrap script, the same by hand:
 
