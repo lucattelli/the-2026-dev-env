@@ -78,6 +78,13 @@ wget -qO /tmp/devenv-bootstrap https://raw.githubusercontent.com/lucattelli/the-
   - Log in: `gh auth login`, `claude`, `codex`.
   - Timeshift setup wizard.
   - Open `nvim` once.
+  - Run `devenv-check` (see below).
+
+To confirm a machine is set up, run `devenv-check` in a new terminal. It
+reads the same host profile and prints one line per item: `ok`, `FAIL`
+(something `devenv-setup` should have done; re-run it) or `todo` (a manual
+step from the checklist not done yet, such as `devenv-keys` or `gh auth
+login`). It's read-only and needs no sudo.
 
 Without the bootstrap script, the same by hand:
 
