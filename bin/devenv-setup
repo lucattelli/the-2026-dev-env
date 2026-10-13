@@ -359,34 +359,25 @@ fi
 # ---------------------------------------------------------------------------
 
 step "System snapshots (Timeshift)"
-# Same choices as the setup wizard would get: rsync onto the system
-# partition, daily (keep 5) and weekly (keep 2), /home and /root excluded.
-# Only written when Timeshift isn't configured yet, so changes made later in
-# the GUI are kept. Built from the package's default.json so the keys match
-# the installed version.
-ts=/etc/timeshift/timeshift.json
-if ! sudo test -f "$ts"; then
-    root_uuid="$(findmnt -no UUID /)"
-    sudo jq --arg uuid "$root_uuid" '
-        .backup_device_uuid = $uuid | .parent_device_uuid = "" |
-        .do_first_run = "false" | .btrfs_mode = "false" | .stop_cron_emails = "true" |
-        .schedule_monthly = "false" | .schedule_weekly = "true" | .schedule_daily = "true" |
-        .schedule_hourly = "false" | .schedule_boot = "false" |
-        .count_weekly = "2" | .count_daily = "5" |
-        .exclude = ["/home/**", "/root/**"]' /etc/timeshift/default.json |
-        sudo tee "$ts" >/dev/null
-    note "configured: rsync on / ($root_uuid), daily 5, weekly 2"
-    configured_timeshift=yes
-fi
-# Scheduled snapshots run from cron; the GUI normally writes this file.
+# Schedule and exclusions are managed here: daily (keep 5) and weekly (keep
+# 2), /home and /root excluded. The snapshot location is only set when none
+# is chosen yet (then: the system partition), so moving snapshots to another
+# disk in the GUI sticks. Built from default.json the first time so the keys
+# match the installed version.
+# Timeshift itself writes or removes /etc/cron.d/timeshift-hourly from these
+# settings every time it runs, so the cron job isn't written here.
 apt_install cron
-write_root /etc/cron.d/timeshift-hourly <<'CRON' && note "cron job for scheduled snapshots"
-SHELL=/bin/bash
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-MAILTO=""
-0 * * * * root timeshift --check --scripted
-CRON
-if [ "${configured_timeshift:-}" = yes ]; then
+ts=/etc/timeshift/timeshift.json
+src="$ts"; sudo test -f "$ts" || src=/etc/timeshift/default.json
+new_ts="$(sudo jq --arg uuid "$(findmnt -no UUID /)" '
+    (if (.backup_device_uuid // "") == "" then .backup_device_uuid = $uuid | .parent_device_uuid = "" else . end) |
+    .do_first_run = "false" | .btrfs_mode = "false" | .stop_cron_emails = "true" |
+    .schedule_monthly = "false" | .schedule_weekly = "true" | .schedule_daily = "true" |
+    .schedule_hourly = "false" | .schedule_boot = "false" |
+    .count_weekly = "2" | .count_daily = "5" |
+    .exclude = ["/home/**", "/root/**"]' "$src")"
+printf '%s\n' "$new_ts" | write_root "$ts" && note "configured: rsync, daily 5, weekly 2, /home excluded"
+if sudo timeshift --list --scripted 2>/dev/null | grep -q "No snapshots found"; then
     note "first snapshot (a few minutes)"
     sudo timeshift --create --scripted --comments "devenv-setup: first snapshot"
 fi
