@@ -304,6 +304,15 @@ step "Tools pinned in mise/config.toml"
 "$HOME/.local/bin/mise" install
 
 step "Git"
+# The LXQt session runs an ssh-agent; this asks for the key passphrase once
+# per login instead of on every push and signed commit.
+mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
+if ! grep -qi '^AddKeysToAgent' "$HOME/.ssh/config" 2>/dev/null; then
+    { echo "AddKeysToAgent yes"; cat "$HOME/.ssh/config" 2>/dev/null || true; } > "$HOME/.ssh/config.new"
+    mv "$HOME/.ssh/config.new" "$HOME/.ssh/config"
+    chmod 600 "$HOME/.ssh/config"
+    note "ssh: AddKeysToAgent yes in ~/.ssh/config"
+fi
 if [ -z "$(git config --global user.name || true)" ]; then
     read -rp "    git user.name: " name
     git config --global user.name "$name"
