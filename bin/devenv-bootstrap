@@ -1,10 +1,11 @@
 #!/bin/sh
 # First boot on a fresh Debian install, before sudo and git exist.
-# Runs as root: installs sudo and git, adds the user to the sudo group,
-# clones this repo into the user's home and starts devenv-setup as the user.
+# Runs as root: installs sudo and git, adds the user to the sudo group and
+# clones this repo into the user's home. devenv-setup is started afterwards by
+# the user's own shell (su and runuser drop the terminal, and sudo needs one).
 #
-# Usage, as your normal user (asks for the root password):
-#   wget -qO /tmp/devenv-bootstrap https://raw.githubusercontent.com/lucattelli/the-2026-dev-env/main/bin/devenv-bootstrap && su - -c "sh /tmp/devenv-bootstrap $USER"
+# Usage, as your normal user (asks for the root password, then yours):
+#   wget -qO /tmp/devenv-bootstrap https://raw.githubusercontent.com/lucattelli/the-2026-dev-env/main/bin/devenv-bootstrap && su - -c "sh /tmp/devenv-bootstrap $USER" && sg sudo -c ~/the-2026-dev-env/bin/devenv-setup
 set -eu
 
 url=https://github.com/lucattelli/the-2026-dev-env
@@ -28,7 +29,5 @@ if [ ! -d "$repo/.git" ]; then
     runuser -l "$user" -c "git clone $url '$repo'"
 fi
 
-echo "==> Starting devenv-setup as $user"
-# sg starts it with the sudo group already active, so no logout or reboot is
-# needed first.
-exec runuser -l "$user" -c "sg sudo -c '$repo/bin/devenv-setup'"
+echo "==> Bootstrap done. If devenv-setup doesn't start next, run as $user:"
+echo "    sg sudo -c ~/the-2026-dev-env/bin/devenv-setup"
