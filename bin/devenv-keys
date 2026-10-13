@@ -1,5 +1,10 @@
 #!/bin/sh
-# Restore this machine's SSH keys from Bitwarden.
+# SSH keys per machine, kept in Bitwarden.
+#
+#   devenv-keys              restore this machine's keys into ~/.ssh
+#   devenv-keys new <host>   create the GitHub key for a new machine: store it
+#                            in Bitwarden and register it on GitHub (run it on
+#                            any machine that's already set up)
 #
 # Keys live in Bitwarden as secure notes in a folder named "ssh". Each item
 # is named "<hostname>-<purpose>" (keys for one machine) or "all-<purpose>"
@@ -12,8 +17,6 @@ set -e
 for cmd in bw jq; do
     command -v "$cmd" >/dev/null || { echo "missing: $cmd"; exit 1; }
 done
-
-host=$(hostname)
 
 if [ -z "$BW_SESSION" ]; then
     if bw login --check >/dev/null 2>&1; then
@@ -28,12 +31,54 @@ bw sync >/dev/null
 folder=$(bw list folders | jq -r '.[] | select(.name == "ssh") | .id')
 [ -n "$folder" ] || { echo 'no "ssh" folder in Bitwarden'; exit 1; }
 
+if [ "${1:-}" = new ]; then
+    target="${2:-}"
+    [ -n "$target" ] || { echo "usage: devenv-keys new <hostname>"; exit 1; }
+    command -v gh >/dev/null || { echo "missing: gh"; exit 1; }
+    item="$target-github"
+    if bw list items --folderid "$folder" | jq -e --arg n "$item" 'any(.[]; .name == $n)' >/dev/null; then
+        echo "Bitwarden already has '$item'; nothing to do."
+        exit 0
+    fi
+    # gh needs these scopes to add authentication and signing keys.
+    if ! gh auth status 2>&1 | grep -q admin:ssh_signing_key; then
+        gh auth refresh -h github.com -s admin:public_key,admin:ssh_signing_key
+    fi
+
+    tmp=$(mktemp -d)
+    trap 'rm -rf "$tmp"' EXIT
+    email=$(git config --global user.email || echo "$USER")
+    echo "Creating the key for $target (choose a passphrase):"
+    ssh-keygen -q -t ed25519 -C "$email ($target)" -f "$tmp/id_ed25519"
+
+    # Written through the CLI: multi-line values pasted into the web UI can
+    # lose their line breaks.
+    bw get template item | jq \
+        --arg name "$item" --arg folder "$folder" \
+        --rawfile priv "$tmp/id_ed25519" --rawfile pub "$tmp/id_ed25519.pub" '
+        .type = 2 | .secureNote = {type: 0} | .login = null | .notes = null |
+        .name = $name | .folderId = $folder |
+        .fields = [
+            {name: "id_ed25519", value: ($priv | rtrimstr("\n")), type: 1},
+            {name: "id_ed25519.pub", value: ($pub | rtrimstr("\n")), type: 1}
+        ]' | bw encode | bw create item >/dev/null
+    echo "Bitwarden: created '$item' in the ssh folder."
+
+    gh ssh-key add "$tmp/id_ed25519.pub" --title "$target" --type authentication
+    gh ssh-key add "$tmp/id_ed25519.pub" --title "$target" --type signing
+    echo "GitHub: added as authentication and signing key."
+    echo "On $target, devenv-setup restores it."
+    exit 0
+fi
+
+host=$(hostname)
 items=$(bw list items --folderid "$folder" |
     jq -c --arg h "$host" '[.[]
         | select(.name | startswith($h + "-") or startswith("all-"))]')
 
 [ "$(printf "%s\n" "$items" | jq length)" -gt 0 ] || {
     echo "no items for $host (expected names like $host-github or all-...)"
+    echo "create one from a machine that's set up: devenv-keys new $host"
     exit 1
 }
 

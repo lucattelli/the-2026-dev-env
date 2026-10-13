@@ -23,6 +23,8 @@ x11/         XCompose (' + c = ç), linked as ~/.XCompose
 ### 1. Before installing
 
 - Image: Debian 13 netinst (amd64).
+- New machine: create its SSH key from a machine that's already set up:
+  `devenv-keys new <hostname>` (see [SSH keys](#ssh-keys)).
 - Network: plug in a cable (USB Ethernet or phone USB tethering) if the
   Wi-Fi needs a non-free driver (MacBook Air).
 - Check the machine's row in the [table](#machines).
@@ -235,29 +237,18 @@ devenv-keys
 ssh -T git@github.com
 ```
 
-For a new machine, create the key, store it in Bitwarden and add the public
-key on GitHub (Settings → SSH and GPG keys) twice: as an *Authentication
-Key* and as a *Signing Key*.
+For a new machine, create its key **before installing**, from any machine
+that's already set up:
 
 ```sh
-ssh-keygen -t ed25519 -C "you@$(hostname)"
+devenv-keys new <hostname>      # e.g. devenv-keys new insp
 ```
 
-Multi-line values pasted into Bitwarden's field UI can lose their line
-breaks. Check the private key round-trips, and write it with the CLI if not:
-
-```sh
-export BW_SESSION=$(bw unlock --raw)
-item="$(hostname)-github"
-bw get item "$item" | jq -r '.fields[] | select(.name == "id_ed25519") | .value' \
-  | diff - ~/.ssh/id_ed25519 && echo ok
-
-# only if the check fails:
-id=$(bw get item "$item" | jq -r .id)
-bw get item "$id" \
-  | jq --arg v "$(cat ~/.ssh/id_ed25519)" '(.fields[] | select(.name == "id_ed25519") | .value) = $v' \
-  | bw encode | bw edit item "$id" >/dev/null
-```
+It asks for a passphrase, stores the key in Bitwarden as `<hostname>-github`
+(written through the CLI, so line breaks survive) and adds the public key on
+GitHub as both an *Authentication Key* and a *Signing Key* (it asks `gh` for
+the extra scopes the first time). Nothing is left on the machine you ran it
+on.
 
 Sign commits with the key:
 
