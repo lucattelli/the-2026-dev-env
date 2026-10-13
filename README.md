@@ -60,13 +60,13 @@ Screen by screen:
 Log in as your user, open a terminal and run:
 
 ```sh
-wget -qO /tmp/devenv-bootstrap https://raw.githubusercontent.com/lucattelli/the-2026-dev-env/main/bin/devenv-bootstrap && su - -c "sh /tmp/devenv-bootstrap $USER"
+wget -qO /tmp/devenv-bootstrap https://raw.githubusercontent.com/lucattelli/the-2026-dev-env/main/bin/devenv-bootstrap && su - -c "sh /tmp/devenv-bootstrap $USER" && sg sudo -c ~/the-2026-dev-env/bin/devenv-setup
 ```
 
 - Asks for the **root** password, installs `sudo` and `git`, adds you to
   the `sudo` group and clones this repo into `~/the-2026-dev-env`.
-- Then starts `devenv-setup` as you, with the `sudo` group already active
-  (no logout needed).
+- Then starts `devenv-setup` as you, through `sg sudo` so the `sudo` group
+  is already active (no logout needed).
 - `devenv-setup` asks for **your** password once, then for git name and
   email near the end.
 - Ends with a numbered checklist. Follow it in order:
@@ -83,9 +83,8 @@ Without the bootstrap script, the same by hand:
 
 ```sh
 su - -c "apt install -y sudo git && usermod -aG sudo $USER"
-# reboot (logging out of LXQt isn't enough), or: newgrp sudo
 git clone https://github.com/lucattelli/the-2026-dev-env ~/the-2026-dev-env
-~/the-2026-dev-env/bin/devenv-setup
+sg sudo -c ~/the-2026-dev-env/bin/devenv-setup   # or reboot first, then run it directly
 ```
 
 `devenv-setup` is safe to re-run. It changes only what differs from the
