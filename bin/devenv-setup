@@ -400,11 +400,11 @@ fi
 # Snapshots live in timeshift/snapshots at the root of the target partition.
 # Checked on disk: parsing 'timeshift --list' missed it on the MBA.
 if [ "$ts_uuid" = "$(findmnt -no UUID /)" ]; then
-    snaps="$(sudo find /timeshift/snapshots -mindepth 1 -maxdepth 1 2>/dev/null)"
+    snaps="$(sudo find /timeshift/snapshots -mindepth 1 -maxdepth 1 2>/dev/null || true)"
 else
     mnt="$(mktemp -d)"
     sudo mount -o ro "UUID=$ts_uuid" "$mnt"
-    snaps="$(sudo find "$mnt/timeshift/snapshots" -mindepth 1 -maxdepth 1 2>/dev/null)"
+    snaps="$(sudo find "$mnt/timeshift/snapshots" -mindepth 1 -maxdepth 1 2>/dev/null || true)"
     sudo umount "$mnt" && rmdir "$mnt"
 fi
 if [ -z "$snaps" ]; then
