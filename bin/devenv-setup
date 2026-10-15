@@ -241,12 +241,13 @@ EOT
 then note "locale: applies from the next login"; session_changed=yes; fi
 # US international keyboard with dead keys (' then a = á, ' then c = ç;
 # ' then space types a plain quote). Profiles can override.
+kb_model="${KEYBOARD_MODEL:-pc105}"
 kb_layout="${KEYBOARD_LAYOUT:-us}"
-kb_variant="${KEYBOARD_VARIANT:-intl}"
+kb_variant="${KEYBOARD_VARIANT-intl}"   # set but empty = the layout's default
 # Debian's keyboard configuration, read by X11 and the console. Written
 # directly: localectl goes through D-Bus and can fail with "Access denied".
 if write_root /etc/default/keyboard << EOT
-XKBMODEL="pc105"
+XKBMODEL="$kb_model"
 XKBLAYOUT="$kb_layout"
 XKBVARIANT="$kb_variant"
 XKBOPTIONS=""
@@ -254,7 +255,7 @@ BACKSPACE="guess"
 EOT
 then
     sudo udevadm trigger --subsystem-match=input --action=change
-    note "keyboard: $kb_layout ($kb_variant), applies from the next login"
+    note "keyboard: $kb_layout ${kb_variant:-(default)} on $kb_model, applies from the next login"
     session_changed=yes
 fi
 
