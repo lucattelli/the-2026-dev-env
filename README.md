@@ -48,8 +48,8 @@ Screen by screen:
 - **Full name / username:** your name / `lucattelli`.
 - **Time zone:** São Paulo.
 - **Partitioning:** Guided, use entire disk → All files in one partition.
-  Inspiron (two SSDs): pick the M.2 (~512 GB); leave the SATA one (~480 GB)
-  for snapshots.
+  Inspiron (two SSDs): pick the 1 TB one; leave the M.2 (~512 GB) for
+  snapshots.
 - **Mirror:** Brazil → `deb.debian.org`.
 - **Popularity contest:** No.
 - **Software selection:**
