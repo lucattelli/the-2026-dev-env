@@ -364,18 +364,29 @@ fi
 # ---------------------------------------------------------------------------
 
 step "System snapshots (Timeshift)"
-# The whole config is managed here, like the dotfiles: rsync onto the system
-# partition, daily (keep 5) and weekly (keep 2), /home and /root excluded.
+# The whole config is managed here, like the dotfiles: rsync, daily (keep 5)
+# and weekly (keep 2), /home and /root excluded. Snapshots go to the system
+# partition, or to the partition labelled $TIMESHIFT_LABEL when the profile
+# sets one (a second disk survives the system disk dying).
 # Changes made in the GUI to these settings are reset on the next run.
 # Timeshift itself writes or removes /etc/cron.d/timeshift-hourly from these
 # settings every time it runs, so the cron job isn't written here.
 apt_install cron
+ts_uuid="$(findmnt -no UUID /)"
+if [ -n "${TIMESHIFT_LABEL:-}" ]; then
+    label_uuid="$(lsblk -nro UUID,LABEL | awk -v l="$TIMESHIFT_LABEL" '$2 == l { print $1; exit }')"
+    if [ -n "$label_uuid" ]; then
+        ts_uuid="$label_uuid"
+    else
+        later "Second disk for snapshots: find it with 'lsblk -o NAME,SIZE,MODEL,FSTYPE,LABEL', then format it (ERASES it): sudo mkfs.ext4 -L $TIMESHIFT_LABEL /dev/<disk>; then run devenv-setup again. Until then snapshots go to the system disk."
+    fi
+fi
 ts=/etc/timeshift/timeshift.json
 # Applied on top of the current file (or default.json the first time) and
 # compared as JSON, because Timeshift rewrites the file in its own format
 # and adds keys of its own; only a real settings change is written.
 src="$ts"; sudo test -f "$ts" || src=/etc/timeshift/default.json
-new_ts="$(sudo jq -S --arg uuid "$(findmnt -no UUID /)" '
+new_ts="$(sudo jq -S --arg uuid "$ts_uuid" '
     .backup_device_uuid = $uuid | .parent_device_uuid = "" |
     .do_first_run = "false" | .btrfs_mode = "false" | .stop_cron_emails = "true" |
     .schedule_monthly = "false" | .schedule_weekly = "true" | .schedule_daily = "true" |
@@ -384,11 +395,19 @@ new_ts="$(sudo jq -S --arg uuid "$(findmnt -no UUID /)" '
     .exclude = ["/home/**", "/root/**"]' "$src")"
 if [ "$new_ts" != "$(sudo jq -S . "$ts" 2>/dev/null)" ]; then
     printf '%s\n' "$new_ts" | sudo tee "$ts" >/dev/null
-    note "configured: rsync, daily 5, weekly 2, /home excluded"
+    note "configured: rsync on $ts_uuid, daily 5, weekly 2, /home excluded"
 fi
-# Snapshots live in /timeshift/snapshots on the system partition (set above).
+# Snapshots live in timeshift/snapshots at the root of the target partition.
 # Checked on disk: parsing 'timeshift --list' missed it on the MBA.
-if [ -z "$(sudo find /timeshift/snapshots -mindepth 1 -maxdepth 1 2>/dev/null)" ]; then
+if [ "$ts_uuid" = "$(findmnt -no UUID /)" ]; then
+    snaps="$(sudo find /timeshift/snapshots -mindepth 1 -maxdepth 1 2>/dev/null)"
+else
+    mnt="$(mktemp -d)"
+    sudo mount -o ro "UUID=$ts_uuid" "$mnt"
+    snaps="$(sudo find "$mnt/timeshift/snapshots" -mindepth 1 -maxdepth 1 2>/dev/null)"
+    sudo umount "$mnt" && rmdir "$mnt"
+fi
+if [ -z "$snaps" ]; then
     note "first snapshot (a few minutes)"
     sudo timeshift --create --scripted --comments "devenv-setup: first snapshot"
 fi
