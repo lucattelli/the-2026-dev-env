@@ -13,7 +13,7 @@ repo="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 host="${1:-$(hostname)}"
 profile="$repo/hosts/$host.sh"
 [ -f "$profile" ] || { echo "No profile for '$host' in $repo/hosts/"; exit 1; }
-KERNEL_PARAMS="" EXTRA_PACKAGES="" KEYBOARD_VARIANT=""
+KERNEL_PARAMS="" EXTRA_PACKAGES=""
 . "$profile"
 
 # Same PATH a new login shell gets, so this works from any terminal.
@@ -53,9 +53,10 @@ manual "network connected" 'nmcli -t -f STATE general | grep -q "^connected"'
 [ "$ZRAM" = yes ] && check "zram swap active" 'swapon --show | grep -q zram'
 check "user in sudo group" 'id -nG | grep -qw sudo'
 check "locale en_US with pt_BR formats" 'locale | grep -q "LANG=en_US.UTF-8" && locale | grep -q "LC_TIME=pt_BR.UTF-8"'
-check "keyboard ${KEYBOARD_LAYOUT:-us} ${KEYBOARD_VARIANT:-intl}" 'grep -q "XKBVARIANT=\"${KEYBOARD_VARIANT:-intl}\"" /etc/default/keyboard'
+kb_model="${KEYBOARD_MODEL:-pc105}" kb_layout="${KEYBOARD_LAYOUT:-us}" kb_variant="${KEYBOARD_VARIANT-intl}"
+check "keyboard $kb_layout ${kb_variant:-(default)} ($kb_model)" 'grep -qx "XKBMODEL=\"$kb_model\"" /etc/default/keyboard && grep -qx "XKBLAYOUT=\"$kb_layout\"" /etc/default/keyboard && grep -qx "XKBVARIANT=\"$kb_variant\"" /etc/default/keyboard'
 if [ -n "${DISPLAY:-}" ]; then
-    check "keyboard active in X" 'setxkbmap -query | grep -q "variant: *${KEYBOARD_VARIANT:-intl}"'
+    check "keyboard active in X" 'setxkbmap -query | grep -q "^layout: *$kb_layout\$" && { [ -z "$kb_variant" ] || setxkbmap -query | grep -q "^variant: *$kb_variant\$"; }'
 fi
 check "Bluetooth not blocked" '! rfkill list bluetooth | grep -q "Soft blocked: yes"'
 check "Vial udev rule" '[ -f /etc/udev/rules.d/99-vial.rules ]'
