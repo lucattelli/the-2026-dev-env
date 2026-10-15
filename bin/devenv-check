@@ -61,6 +61,9 @@ fi
 check "Bluetooth not blocked" '! rfkill list bluetooth | grep -q "Soft blocked: yes"'
 check "Vial udev rule" '[ -f /etc/udev/rules.d/99-vial.rules ]'
 check "Timeshift configured" '[ -f /etc/timeshift/timeshift.json ]'
+if [ -n "${TIMESHIFT_LABEL:-}" ]; then
+    manual "Timeshift on the disk labelled $TIMESHIFT_LABEL" '[ "$(jq -r .backup_device_uuid /etc/timeshift/timeshift.json)" = "$(lsblk -nro UUID,LABEL | awk -v l="$TIMESHIFT_LABEL" "\$2 == l { print \$1; exit }")" ]'
+fi
 # Timeshift writes this file only while scheduled snapshots are on.
 check "Timeshift scheduled (cron)" '[ -f /etc/cron.d/timeshift-hourly ] && systemctl is-active cron'
 

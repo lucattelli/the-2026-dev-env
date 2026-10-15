@@ -48,6 +48,8 @@ Screen by screen:
 - **Full name / username:** your name / `lucattelli`.
 - **Time zone:** São Paulo.
 - **Partitioning:** Guided, use entire disk → All files in one partition.
+  Inspiron (two SSDs): pick the M.2 (~512 GB); leave the SATA one (~480 GB)
+  for snapshots.
 - **Mirror:** Brazil → `deb.debian.org`.
 - **Popularity contest:** No.
 - **Software selection:**
@@ -535,7 +537,10 @@ the next run) and takes the first snapshot if there is none yet:
 
 - **Type:** rsync.
 - **Location:** the system partition. That protects against a bad update,
-  but not against a dead drive.
+  but not against a dead drive. A machine with a second disk sets
+  `TIMESHIFT_LABEL` in its profile (Inspiron: `snapshots`); the setup then
+  uses the partition with that label, and until it exists lists the
+  `mkfs.ext4 -L` command to create it.
 - **Schedule:** daily (keep 5) and weekly (keep 2), no boot snapshots.
   Timeshift itself adds the hourly check to `/etc/cron.d/timeshift-hourly`.
 - **Users:** `/home` and `/root` excluded. Code lives in git, config in this

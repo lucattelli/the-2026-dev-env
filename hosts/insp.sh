@@ -13,3 +13,6 @@ KERNEL_PARAMS=""
 KEYBOARD_MODEL=abnt2
 KEYBOARD_LAYOUT=br
 KEYBOARD_VARIANT=""
+# Two SSDs: the system on the M.2 (512 GB), Timeshift snapshots on the SATA
+# one (480 GB), formatted ext4 with this label.
+TIMESHIFT_LABEL=snapshots
