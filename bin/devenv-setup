@@ -301,6 +301,18 @@ link "$repo/claude/CLAUDE.md" "$HOME/.codex/AGENTS.md"
 # ' + c = ç with the us-intl keyboard (applies from the next login).
 [ "$(readlink "$HOME/.XCompose" 2>/dev/null)" = "$repo/x11/XCompose" ] || session_changed=yes
 link "$repo/x11/XCompose" "$HOME/.XCompose"
+# HiDPI screens: X11 assumes 96 DPI, so text and widgets come out tiny.
+# SCREEN_DPI from the profile goes into ~/.Xresources, which the X session
+# loads at login (fonts in Qt, GTK, Chromium, Firefox; Alacritty's scale).
+if [ -n "${SCREEN_DPI:-}" ]; then
+    xres="$HOME/.Xresources"
+    if ! grep -qx "Xft.dpi: $SCREEN_DPI" "$xres" 2>/dev/null; then
+        { grep -v '^Xft.dpi:' "$xres" 2>/dev/null || true; echo "Xft.dpi: $SCREEN_DPI"; } > "$xres.new"
+        mv "$xres.new" "$xres"
+        [ -n "${DISPLAY:-}" ] && xrdb -merge "$xres"
+        note "screen: Xft.dpi $SCREEN_DPI in ~/.Xresources (reopen apps to see it)"
+    fi
+fi
 line="[ -f \"$repo/bash/bashrc\" ] && . \"$repo/bash/bashrc\""
 grep -qF "$repo/bash/bashrc" "$HOME/.bashrc" 2>/dev/null || {
     printf '\n%s\n' "$line" >> "$HOME/.bashrc"

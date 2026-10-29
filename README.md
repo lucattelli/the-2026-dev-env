@@ -59,6 +59,17 @@ Screen by screen:
   - [x] SSH server
   - [x] standard system utilities
 - **Missing firmware prompt** (e.g. Broadcom Wi-Fi): continue without it.
+- **XPS (and other hardware newer than Debian 13's kernel):** the first boot
+  stops at a text screen after `Started sddm.service`, because the 6.12
+  kernel has no driver for the GPU. Reboot, press `e` in GRUB, add
+  `systemd.unit=multi-user.target` at the end of the `linux` line and press
+  `Ctrl+X` to get a text login. Run the three parts of the bootstrap
+  separately (`wget -qO /tmp/b …/devenv-bootstrap`, then
+  `su - -c "sh /tmp/b $USER"`, then
+  `sg sudo -c ~/the-2026-dev-env/bin/devenv-setup`), or SSH in from another
+  machine (`ssh lucattelli@xps.local`) and paste the full command. Answer `n`
+  to the GitHub login and run `gh auth login` after the reboot: the
+  backports kernel brings the desktop up.
 
 ### 3. First boot: bootstrap and setup
 
@@ -117,6 +128,8 @@ Set by `devenv-setup` on every machine:
   `ç`, `~` + `a` = `ã`, `'` + space = `'`. Same for `"`, `` ` ``, `~`, `^`.
 - `'` + `c` gives `ć` in the default compose table; `x11/XCompose` (linked
   as `~/.XCompose`) changes it to `ç`. Applies from the next login.
+- HiDPI screens: a profile can set `SCREEN_DPI` (XPS: 120, i.e. 125%); the
+  setup writes `Xft.dpi` to `~/.Xresources`. X11 assumes 96 otherwise.
 - A profile can override the keyboard with `KEYBOARD_MODEL`,
   `KEYBOARD_LAYOUT` and `KEYBOARD_VARIANT` (empty = the layout's default).
   The Inspiron and the XPS have ABNT2 keyboards: `abnt2`, `br`, default variant.
@@ -132,7 +145,7 @@ on every machine.
 | `insp` | Dell Inspiron 7580 (MX150) | stable | Debian 550 | hybrid, `prime-run` |
 | `mba` | MacBook Air 11" 2014 (4 GB) | stable | none | Broadcom Wi-Fi, zram, Docker on demand, `intel_iommu=off` |
 | `t1g` | ThinkPad T1g (RTX 5070) | backports | NVIDIA repo (590+) | hybrid, local AI; untested |
-| `xps` | Dell XPS 13 2026 (Ultra 7 355) | backports | none | Mesa and firmware from backports, ABNT2 |
+| `xps` | Dell XPS 13 2026 (Ultra 7 355) | backports | none | Mesa and firmware from backports, ABNT2, 125% scale, text-mode first boot |
 
 Why two kernel tracks: older machines are fully supported by Debian's 6.12
 kernel and gain nothing from a newer one (on the MacBook, newer kernels tend

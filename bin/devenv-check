@@ -115,6 +115,10 @@ for l in "${!targets[@]}"; do
     check "${l/#$HOME/\~} -> repo" '[ "$(readlink "$l")" = "$repo/${targets[$l]}" ]'
 done
 check "~/.bashrc sources the repo bashrc" 'grep -qF "$repo/bash/bashrc" ~/.bashrc'
+if [ -n "${SCREEN_DPI:-}" ]; then
+    check "screen DPI $SCREEN_DPI in ~/.Xresources" 'grep -qx "Xft.dpi: $SCREEN_DPI" ~/.Xresources'
+    [ -n "${DISPLAY:-}" ] && check "screen DPI $SCREEN_DPI active in X" 'xrdb -query | grep -qx "Xft.dpi:[[:space:]]*$SCREEN_DPI"'
+fi
 
 section "Git and keys"
 check "git name and email" 'git config --global user.name && git config --global user.email'
