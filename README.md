@@ -132,7 +132,7 @@ Set by `devenv-setup` on every machine:
   `XF86MonBrightnessUp/Down` to `devenv-brightness up/down` in
   `~/.config/lxqt/globalkeyshortcuts.conf`, keeping the other shortcuts.
   It reads the panel's range from `/sys/class/backlight/*/max_brightness`
-  and moves on a 10% grid, never below 5%, on any machine, showing the new
+  and moves on a 3% grid, never below 1%, on any machine, showing the new
   level in a notification like the volume keys. A udev rule and
   the `video` group let it write without root (from the next login).
 - HiDPI screens: a profile can set `SCREEN_DPI` (XPS: 120, i.e. 125%); the

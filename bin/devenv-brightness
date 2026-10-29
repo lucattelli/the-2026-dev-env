@@ -1,6 +1,6 @@
 #!/bin/sh
-# Screen brightness in 10% steps on a 10% grid (10, 20, ... 100%), never
-# below 5%. Bound to the brightness keys by devenv-setup.
+# Screen brightness in 3% steps on a 3% grid (3, 6, ... 99, 100%), never
+# below 1%. Bound to the brightness keys by devenv-setup.
 #   devenv-brightness up|down
 # The range comes from the panel itself (max_brightness in sysfs), so the
 # same step works on every machine. Writing needs the udev rule and the
@@ -15,8 +15,8 @@ case "${1:-}" in
     up|down) dir="$1" ;;
     *) echo "usage: devenv-brightness up|down"; exit 1 ;;
 esac
-step="${STEP:-10}"
-floor=5
+step="${STEP:-3}"
+floor=1
 
 dev="${BACKLIGHT:-}"
 if [ -z "$dev" ]; then
