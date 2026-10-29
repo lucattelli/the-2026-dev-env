@@ -128,6 +128,9 @@ Set by `devenv-setup` on every machine:
   `ç`, `~` + `a` = `ã`, `'` + space = `'`. Same for `"`, `` ` ``, `~`, `^`.
 - `'` + `c` gives `ć` in the default compose table; `x11/XCompose` (linked
   as `~/.XCompose`) changes it to `ç`. Applies from the next login.
+- Brightness keys: LXQt has no shortcut for them by default; the setup adds
+  `XF86MonBrightnessUp/Down` → `lxqt-config-brightness -i/-d` to
+  `~/.config/lxqt/globalkeyshortcuts.conf`, keeping the other shortcuts.
 - HiDPI screens: a profile can set `SCREEN_DPI` (XPS: 120, i.e. 125%); the
   setup writes `Xft.dpi` to `~/.Xresources`. X11 assumes 96 otherwise.
   Alacritty's font size is per machine too: `TERMINAL_FONT_SIZE` (default

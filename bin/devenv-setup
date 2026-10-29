@@ -278,6 +278,45 @@ sudo rfkill unblock bluetooth || true
 sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 sudo flatpak install -y --noninteractive flathub com.bitwarden.desktop
 
+step "Brightness keys (LXQt shortcuts)"
+# LXQt ships volume shortcuts but none for brightness. Add them to the
+# user's shortcut file without touching the rest; the file starts as a copy
+# of LXQt's defaults, since an existing user file replaces them.
+# lxqt-config-brightness stops at 5% (seen on the XPS), so the keys never
+# turn the screen fully dark.
+ks="$HOME/.config/lxqt/globalkeyshortcuts.conf"
+if ! grep -q '^\[XF86MonBrightnessUp\.' "$ks" 2>/dev/null; then
+    running=no
+    pgrep -x -u "$USER" lxqt-globalkeysd >/dev/null && running=yes
+    # Stop the daemon first: it rewrites the file from memory.
+    [ "$running" = yes ] && pkill -x -u "$USER" lxqt-globalkeysd
+    mkdir -p "$(dirname "$ks")"
+    if [ ! -f "$ks" ]; then
+        for def in /usr/share/lxqt/globalkeyshortcuts.conf /etc/xdg/lxqt/globalkeyshortcuts.conf; do
+            [ -f "$def" ] && { cp "$def" "$ks"; break; }
+        done
+    fi
+    cat >> "$ks" << 'EOT'
+
+[XF86MonBrightnessUp.90]
+Comment=Brightness up
+Enabled=true
+Exec=lxqt-config-brightness, -i
+
+[XF86MonBrightnessDown.91]
+Comment=Brightness down
+Enabled=true
+Exec=lxqt-config-brightness, -d
+EOT
+    if [ "$running" = yes ]; then
+        # lxqt-session may restart it by itself; start it only if it didn't.
+        sleep 2
+        pgrep -x -u "$USER" lxqt-globalkeysd >/dev/null ||
+            setsid -f lxqt-globalkeysd >/dev/null 2>&1 < /dev/null
+    fi
+    note "brightness keys: lxqt-config-brightness -i / -d"
+fi
+
 # ---------------------------------------------------------------------------
 # User environment
 # ---------------------------------------------------------------------------
