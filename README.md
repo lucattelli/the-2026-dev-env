@@ -135,6 +135,7 @@ Set by `devenv-setup` on every machine:
   and moves on a 3% grid, never below 1%, on any machine, showing the new
   level in a notification like the volume keys. A udev rule and
   the `video` group let it write without root (from the next login).
+- Super (Windows) key alone opens the LXQt main menu, like `Alt+F1`.
 - HiDPI screens: a profile can set `SCREEN_DPI` (XPS: 120, i.e. 125%); the
   setup writes `Xft.dpi` to `~/.Xresources`. X11 assumes 96 otherwise.
   Alacritty's font size is per machine too: `TERMINAL_FONT_SIZE` (default
