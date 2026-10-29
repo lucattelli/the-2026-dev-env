@@ -278,7 +278,7 @@ sudo rfkill unblock bluetooth || true
 sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 sudo flatpak install -y --noninteractive flathub com.bitwarden.desktop
 
-step "Brightness and Super keys (LXQt shortcuts)"
+step "Brightness and Windows keys (LXQt shortcuts)"
 # notify-send shows the new level on screen, like the volume keys.
 apt_install libnotify-bin
 # Let the video group write the backlight, so devenv-brightness can set an
@@ -288,65 +288,12 @@ ACTION=="add", SUBSYSTEM=="backlight", RUN+="/bin/chgrp video /sys/class/backlig
 EOT
 then sudo udevadm control --reload && sudo udevadm trigger --subsystem-match=backlight --action=add; fi
 id -nG "$USER" | grep -qw video || sudo usermod -aG video "$USER"
-# LXQt shortcuts, in the user's shortcut file; everything else in it is left
-# alone. The file starts as a copy of LXQt's defaults, since an existing
-# user file replaces them.
-# - Brightness keys: LXQt ships volume shortcuts but none for brightness;
-#   bound to devenv-brightness (3% steps), replacing older entries.
-# - Super (Windows key) alone opens the main menu, like Alt+F1. It reuses
-#   the menu's path from the Alt+F1 entry (the panel names it after the
-#   plugin, e.g. /panel/mainmenu/show or /panel/fancymenu/show).
-ks="$HOME/.config/lxqt/globalkeyshortcuts.conf"
-need_bright=no need_super=no
-grep -qx "Exec=$repo/bin/devenv-brightness, up" "$ks" 2>/dev/null || need_bright=yes
-grep -q '^\[Super_L\.' "$ks" 2>/dev/null || need_super=yes
-if [ "$need_bright" = yes ] || [ "$need_super" = yes ]; then
-    running=no
-    pgrep -x -u "$USER" lxqt-globalkeysd >/dev/null && running=yes
-    # Stop the daemon first: it rewrites the file from memory.
-    [ "$running" = yes ] && pkill -x -u "$USER" lxqt-globalkeysd
-    mkdir -p "$(dirname "$ks")"
-    if [ ! -f "$ks" ]; then
-        for def in /usr/share/lxqt/globalkeyshortcuts.conf /etc/xdg/lxqt/globalkeyshortcuts.conf; do
-            [ -f "$def" ] && { cp "$def" "$ks"; break; }
-        done
-    fi
-    touch "$ks"
-    if [ "$need_bright" = yes ]; then
-        # Drop existing [XF86MonBrightness...] sections, then append ours.
-        awk '/^\[/ { skip = ($0 ~ /^\[XF86MonBrightness(Up|Down)\./) } !skip' "$ks" > "$ks.new"
-        cat >> "$ks.new" << EOT
-
-[XF86MonBrightnessUp.90]
-Comment=Brightness up
-Enabled=true
-Exec=$repo/bin/devenv-brightness, up
-
-[XF86MonBrightnessDown.91]
-Comment=Brightness down
-Enabled=true
-Exec=$repo/bin/devenv-brightness, down
-EOT
-        mv "$ks.new" "$ks"
-        note "brightness keys: devenv-brightness up / down"
-    fi
-    if [ "$need_super" = yes ]; then
-        menu_path="$(awk '/^\[/ { alt = ($0 ~ /^\[Alt%2BF1\./) } alt && /^path=/ { sub(/^path=/, ""); print; exit }' "$ks")"
-        cat >> "$ks" << EOT
-
-[Super_L.92]
-Comment=Show/hide main menu
-Enabled=true
-path=${menu_path:-/panel/mainmenu/show}
-EOT
-        note "Super key: opens the main menu (${menu_path:-/panel/mainmenu/show})"
-    fi
-    if [ "$running" = yes ]; then
-        # lxqt-session may restart it by itself; start it only if it didn't.
-        sleep 2
-        pgrep -x -u "$USER" lxqt-globalkeysd >/dev/null ||
-            setsid -f lxqt-globalkeysd >/dev/null 2>&1 < /dev/null
-    fi
+# Shortcuts (Windows key -> menu, brightness keys) go through the LXQt
+# shortcut daemon's D-Bus API: editing its file by hand doesn't reach panel
+# actions like the menu. That needs the desktop session, so from a text
+# console it is left for later.
+if ! "$repo/bin/devenv-shortcuts"; then
+    later "In the desktop, run devenv-shortcuts (Windows key opens the menu, brightness keys)."
 fi
 
 # ---------------------------------------------------------------------------

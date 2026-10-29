@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# LXQt global shortcuts, set through the shortcut daemon's D-Bus API (the
+# same one the Shortcut Keys settings use), so the daemon applies and saves
+# them itself. Editing globalkeyshortcuts.conf by hand doesn't work for
+# panel actions such as the menu.
+#
+#   - Windows (Super) key alone opens the main menu.
+#   - Brightness keys run devenv-brightness (3% steps, never below 1%);
+#     older brightness bindings are removed.
+#
+# Needs a running LXQt session. Safe to re-run: it changes only what differs.
+# Run by devenv-setup; exits 2 when there is no LXQt session to talk to.
+set -euo pipefail
+
+repo="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+B=(busctl --user call org.lxqt.global_key_shortcuts /daemon org.lxqt.global_key_shortcuts.daemon)
+
+ids="$("${B[@]}" getAllActionIds 2>/dev/null)" || {
+    echo "LXQt shortcut daemon not reachable: log in to the desktop and run devenv-shortcuts."
+    exit 2
+}
+ids="$(cut -d' ' -f3- <<< "$ids")"
+
+# busctl prints replies as a signature followed by values with quoted
+# strings, e.g.: bssbss true "Super_L" "Show/hide main menu" true "client" "/panel/x"
+fields() { eval "set -- $1"; shift; printf "%s\n" "$@"; }
+
+menu_id="" menu_key=""
+declare -a bright_ids=()
+declare -A have=()
+for id in $ids; do
+    mapfile -t a < <(fields "$("${B[@]}" getActionById t "$id")")
+    # ok shortcut description enabled type info
+    [ "${a[0]:-}" = true ] || continue
+    if [ "${a[4]:-}" = client ] && [[ "${a[5]:-}" == /panel/*/show_hide ]] && [[ "${a[2]:-}" == *[Mm]enu* ]]; then
+        menu_id="$id" menu_key="${a[1]:-}"
+    fi
+    if [[ "${a[1]:-}" == XF86MonBrightness* ]]; then
+        if [ "${a[4]:-}" = command ]; then
+            mapfile -t c < <(fields "$("${B[@]}" getCommandActionInfoById t "$id")")
+            # ok shortcut description enabled command [args...] (as: count, items)
+            if [ "${c[4]:-}" = "$repo/bin/devenv-brightness" ]; then
+                have["${a[1]:-}"]="$id"
+                continue
+            fi
+        fi
+        bright_ids+=("$id")
+    fi
+done
+
+if [ -n "$menu_id" ] && [ "$menu_key" != Super_L ]; then
+    "${B[@]}" changeShortcut ts "$menu_id" Super_L >/dev/null
+    echo "Windows key: opens the main menu (was ${menu_key:-none})"
+fi
+[ -n "$menu_id" ] || echo "no main menu in the panel; Windows key left alone"
+
+for id in "${bright_ids[@]}"; do
+    "${B[@]}" removeAction t "$id" >/dev/null
+    echo "removed an older brightness binding (action $id)"
+done
+for pair in "XF86MonBrightnessUp up" "XF86MonBrightnessDown down"; do
+    key="${pair% *}" dir="${pair#* }"
+    [ -n "${have[$key]:-}" ] && continue
+    "${B[@]}" addCommandAction ssass "$key" "$repo/bin/devenv-brightness" 1 "$dir" "Brightness $dir" >/dev/null
+    echo "$key: devenv-brightness $dir"
+done
