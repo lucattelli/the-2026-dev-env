@@ -129,9 +129,11 @@ Set by `devenv-setup` on every machine:
 - `'` + `c` gives `ć` in the default compose table; `x11/XCompose` (linked
   as `~/.XCompose`) changes it to `ç`. Applies from the next login.
 - Brightness keys: LXQt has no shortcut for them by default; the setup binds
-  `XF86MonBrightnessUp/Down` to `devenv-brightness up/down` (10% per press;
-  `lxqt-config-brightness -i/-d` alone moves 2%) in
+  `XF86MonBrightnessUp/Down` to `devenv-brightness up/down` in
   `~/.config/lxqt/globalkeyshortcuts.conf`, keeping the other shortcuts.
+  It reads the panel's range from `/sys/class/backlight/*/max_brightness`
+  and moves on a 10% grid, never below 5%, on any machine. A udev rule and
+  the `video` group let it write without root (from the next login).
 - HiDPI screens: a profile can set `SCREEN_DPI` (XPS: 120, i.e. 125%); the
   setup writes `Xft.dpi` to `~/.Xresources`. X11 assumes 96 otherwise.
   Alacritty's font size is per machine too: `TERMINAL_FONT_SIZE` (default

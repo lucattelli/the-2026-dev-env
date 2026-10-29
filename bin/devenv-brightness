@@ -1,17 +1,42 @@
 #!/bin/sh
-# Screen brightness in bigger steps than lxqt-config-brightness's 2%.
-# Bound to the brightness keys by devenv-setup.
-#   devenv-brightness up|down [steps]   (default 5 steps = 10%)
-# lxqt-config-brightness does the actual change (no root needed) and stops
-# at 5%, so the screen never goes fully dark.
+# Screen brightness in 10% steps on a 10% grid (10, 20, ... 100%), never
+# below 5%. Bound to the brightness keys by devenv-setup.
+#   devenv-brightness up|down
+# The range comes from the panel itself (max_brightness in sysfs), so the
+# same step works on every machine. Writing needs the udev rule and the
+# video group that devenv-setup adds; until then (before a new login) it
+# falls back to lxqt-config-brightness, which moves 2% per call.
+# BACKLIGHT=/sys/class/backlight/<name> picks a device when there are
+# several; STEP=<percent> changes the step.
 set -e
 case "${1:-}" in
-    up)   flag=-i ;;
-    down) flag=-d ;;
-    *)    echo "usage: devenv-brightness up|down [steps]"; exit 1 ;;
+    up|down) dir="$1" ;;
+    *) echo "usage: devenv-brightness up|down"; exit 1 ;;
 esac
-n="${2:-5}"
-while [ "$n" -gt 0 ]; do
-    lxqt-config-brightness "$flag"
-    n=$((n - 1))
-done
+step="${STEP:-10}"
+floor=5
+
+dev="${BACKLIGHT:-}"
+if [ -z "$dev" ]; then
+    for d in /sys/class/backlight/*; do [ -e "$d/brightness" ] && { dev="$d"; break; }; done
+fi
+[ -n "$dev" ] || { echo "no backlight device"; exit 1; }
+
+if [ ! -w "$dev/brightness" ]; then
+    flag=-i; [ "$dir" = down ] && flag=-d
+    n=$((step / 2))
+    while [ "$n" -gt 0 ]; do lxqt-config-brightness "$flag"; n=$((n - 1)); done
+    exit 0
+fi
+
+max=$(cat "$dev/max_brightness")
+cur=$(cat "$dev/brightness")
+pct=$(( (cur * 100 + max / 2) / max ))
+if [ "$dir" = up ]; then
+    target=$(( (pct / step + 1) * step ))
+else
+    target=$(( ((pct + step - 1) / step - 1) * step ))
+fi
+[ "$target" -gt 100 ] && target=100
+[ "$target" -lt "$floor" ] && target=$floor
+echo $(( max * target / 100 )) > "$dev/brightness"

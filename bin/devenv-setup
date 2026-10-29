@@ -279,8 +279,15 @@ sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flat
 sudo flatpak install -y --noninteractive flathub com.bitwarden.desktop
 
 step "Brightness keys (LXQt shortcuts)"
+# Let the video group write the backlight, so devenv-brightness can set an
+# exact level (computed from the panel's max_brightness) without root.
+if write_root /etc/udev/rules.d/90-backlight.rules << 'EOT'
+ACTION=="add", SUBSYSTEM=="backlight", RUN+="/bin/chgrp video /sys/class/backlight/%k/brightness", RUN+="/bin/chmod g+w /sys/class/backlight/%k/brightness"
+EOT
+then sudo udevadm control --reload && sudo udevadm trigger --subsystem-match=backlight --action=add; fi
+id -nG "$USER" | grep -qw video || sudo usermod -aG video "$USER"
 # LXQt ships volume shortcuts but none for brightness. Bind the keys to
-# devenv-brightness (10% per press) in the user's shortcut file, replacing
+# devenv-brightness (10% steps) in the user's shortcut file, replacing
 # any older brightness entries and leaving the rest alone. The file starts
 # as a copy of LXQt's defaults, since an existing user file replaces them.
 ks="$HOME/.config/lxqt/globalkeyshortcuts.conf"
@@ -515,7 +522,7 @@ case " $EXTRA_PACKAGES " in *" broadcom-sta-dkms "*)
     grep -q '^wl ' /proc/modules || reasons+=("Wi-Fi driver") ;;
 esac
 [ "$GPU" != none ] && ! nvidia-smi >/dev/null 2>&1 && reasons+=("NVIDIA driver")
-for g in sudo docker; do
+for g in sudo docker video; do
     if id -nG "$USER" | grep -qw "$g" && ! id -nG | grep -qw "$g"; then
         reasons+=("$g group"); break
     fi
