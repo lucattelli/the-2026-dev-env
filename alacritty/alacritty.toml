@@ -1,12 +1,14 @@
 [general]
 live_config_reload = true
+# Per-machine settings (font size), written by devenv-setup from the host
+# profile. Values here win over the import, so the size isn't set here.
+import = ["~/.config/alacritty-host.toml"]
 
 [window]
 padding = { x = 6, y = 6 }
 
 [font]
 normal = { family = "JetBrains Mono" }
-size = 8
 
 [selection]
 save_to_clipboard = true
