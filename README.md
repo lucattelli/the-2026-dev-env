@@ -39,7 +39,7 @@ Screen by screen:
 - **Language:** English.
 - **Location:** other → South America → Brazil.
 - **Locale:** `en_US.UTF-8`.
-- **Keyboard:** American English (Inspiron: Portuguese (Brazil), ABNT2).
+- **Keyboard:** American English (Inspiron and XPS: Brazilian, ABNT2).
 - **Network interface:** the cable (Wi-Fi may not be listed).
 - **Hostname:** from the [table](#machines) (`l5i`, `insp`, `mba`, `t1g`,
   `xps`).
@@ -119,7 +119,7 @@ Set by `devenv-setup` on every machine:
   as `~/.XCompose`) changes it to `ç`. Applies from the next login.
 - A profile can override the keyboard with `KEYBOARD_MODEL`,
   `KEYBOARD_LAYOUT` and `KEYBOARD_VARIANT` (empty = the layout's default).
-  The Inspiron has an ABNT2 keyboard: `abnt2`, `br`, default variant.
+  The Inspiron and the XPS have ABNT2 keyboards: `abnt2`, `br`, default variant.
 
 ## Machines
 
