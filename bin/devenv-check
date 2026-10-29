@@ -63,8 +63,10 @@ if [ -n "${DISPLAY:-}" ]; then
 fi
 check "Bluetooth not blocked" '! rfkill list bluetooth | grep -q "Soft blocked: yes"'
 check "Vial udev rule" '[ -f /etc/udev/rules.d/99-vial.rules ]'
-check "brightness keys (LXQt shortcuts)" 'grep -qx "Exec=$repo/bin/devenv-brightness, up" ~/.config/lxqt/globalkeyshortcuts.conf && grep -qx "Exec=$repo/bin/devenv-brightness, down" ~/.config/lxqt/globalkeyshortcuts.conf'
-check "Super key opens the main menu" 'grep -q "^\[Super_L\." ~/.config/lxqt/globalkeyshortcuts.conf'
+# The daemon saves its shortcuts to this file.
+ks=~/.config/lxqt/globalkeyshortcuts.conf
+check "brightness keys (LXQt shortcuts)" 'grep -qx "Exec=$repo/bin/devenv-brightness, up" $ks && grep -qx "Exec=$repo/bin/devenv-brightness, down" $ks'
+check "Windows key opens the main menu" 'awk "/^\\[/ { s = (\$0 ~ /^\\[Super_L\\./) } s && /^path=\\/panel\\/.*\\/show_hide\$/ { f = 1 } END { exit !f }" $ks'
 if ls /sys/class/backlight/*/brightness >/dev/null 2>&1; then
     check "user in video group" 'id -nG | grep -qw video'
     check "backlight writable without root" 'for f in /sys/class/backlight/*/brightness; do [ -w "$f" ] || exit 1; done'
