@@ -279,13 +279,12 @@ sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flat
 sudo flatpak install -y --noninteractive flathub com.bitwarden.desktop
 
 step "Brightness keys (LXQt shortcuts)"
-# LXQt ships volume shortcuts but none for brightness. Add them to the
-# user's shortcut file without touching the rest; the file starts as a copy
-# of LXQt's defaults, since an existing user file replaces them.
-# lxqt-config-brightness stops at 5% (seen on the XPS), so the keys never
-# turn the screen fully dark.
+# LXQt ships volume shortcuts but none for brightness. Bind the keys to
+# devenv-brightness (10% per press) in the user's shortcut file, replacing
+# any older brightness entries and leaving the rest alone. The file starts
+# as a copy of LXQt's defaults, since an existing user file replaces them.
 ks="$HOME/.config/lxqt/globalkeyshortcuts.conf"
-if ! grep -q '^\[XF86MonBrightnessUp\.' "$ks" 2>/dev/null; then
+if ! grep -qx "Exec=$repo/bin/devenv-brightness, up" "$ks" 2>/dev/null; then
     running=no
     pgrep -x -u "$USER" lxqt-globalkeysd >/dev/null && running=yes
     # Stop the daemon first: it rewrites the file from memory.
@@ -296,25 +295,28 @@ if ! grep -q '^\[XF86MonBrightnessUp\.' "$ks" 2>/dev/null; then
             [ -f "$def" ] && { cp "$def" "$ks"; break; }
         done
     fi
-    cat >> "$ks" << 'EOT'
+    # Drop existing [XF86MonBrightness...] sections, then append ours.
+    awk '/^\[/ { skip = ($0 ~ /^\[XF86MonBrightness(Up|Down)\./) } !skip' "$ks" 2>/dev/null > "$ks.new" || true
+    cat >> "$ks.new" << EOT
 
 [XF86MonBrightnessUp.90]
-Comment=Brightness up
+Comment=Brightness up 10%
 Enabled=true
-Exec=lxqt-config-brightness, -i
+Exec=$repo/bin/devenv-brightness, up
 
 [XF86MonBrightnessDown.91]
-Comment=Brightness down
+Comment=Brightness down 10%
 Enabled=true
-Exec=lxqt-config-brightness, -d
+Exec=$repo/bin/devenv-brightness, down
 EOT
+    mv "$ks.new" "$ks"
     if [ "$running" = yes ]; then
         # lxqt-session may restart it by itself; start it only if it didn't.
         sleep 2
         pgrep -x -u "$USER" lxqt-globalkeysd >/dev/null ||
             setsid -f lxqt-globalkeysd >/dev/null 2>&1 < /dev/null
     fi
-    note "brightness keys: lxqt-config-brightness -i / -d"
+    note "brightness keys: devenv-brightness up / down (10% per press)"
 fi
 
 # ---------------------------------------------------------------------------
