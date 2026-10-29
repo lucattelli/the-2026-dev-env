@@ -132,7 +132,7 @@ on every machine.
 | `insp` | Dell Inspiron 7580 (MX150) | stable | Debian 550 | hybrid, `prime-run` |
 | `mba` | MacBook Air 11" 2014 (4 GB) | stable | none | Broadcom Wi-Fi, zram, Docker on demand, `intel_iommu=off` |
 | `t1g` | ThinkPad T1g (RTX 5070) | backports | NVIDIA repo (590+) | hybrid, local AI; untested |
-| `xps` | Dell XPS 13 2026 (Ultra 7 355) | backports | none | review after arrival |
+| `xps` | Dell XPS 13 2026 (Ultra 7 355) | backports | none | Mesa and firmware from backports, ABNT2 |
 
 Why two kernel tracks: older machines are fully supported by Debian's 6.12
 kernel and gain nothing from a newer one (on the MacBook, newer kernels tend
