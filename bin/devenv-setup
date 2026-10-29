@@ -279,6 +279,8 @@ sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flat
 sudo flatpak install -y --noninteractive flathub com.bitwarden.desktop
 
 step "Brightness keys (LXQt shortcuts)"
+# notify-send shows the new level on screen, like the volume keys.
+apt_install libnotify-bin
 # Let the video group write the backlight, so devenv-brightness can set an
 # exact level (computed from the panel's max_brightness) without root.
 if write_root /etc/udev/rules.d/90-backlight.rules << 'EOT'

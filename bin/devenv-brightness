@@ -8,6 +8,8 @@
 # falls back to lxqt-config-brightness, which moves 2% per call.
 # BACKLIGHT=/sys/class/backlight/<name> picks a device when there are
 # several; STEP=<percent> changes the step.
+# Each change shows a short notification with the new level, like the
+# volume keys do; repeated presses replace it instead of stacking.
 set -e
 case "${1:-}" in
     up|down) dir="$1" ;;
@@ -22,10 +24,21 @@ if [ -z "$dev" ]; then
 fi
 [ -n "$dev" ] || { echo "no backlight device"; exit 1; }
 
+notify() {
+    command -v notify-send >/dev/null || return 0
+    idfile="${XDG_RUNTIME_DIR:-/tmp}/devenv-brightness.id"
+    id=$(cat "$idfile" 2>/dev/null || echo 0)
+    notify-send -a Brightness -i display-brightness -t 1500 -p -r "$id" \
+        -h "int:value:$1" "Brightness $1%" > "$idfile.new" 2>/dev/null &&
+        mv "$idfile.new" "$idfile" || true
+}
+
 if [ ! -w "$dev/brightness" ]; then
     flag=-i; [ "$dir" = down ] && flag=-d
     n=$((step / 2))
     while [ "$n" -gt 0 ]; do lxqt-config-brightness "$flag"; n=$((n - 1)); done
+    max=$(cat "$dev/max_brightness"); cur=$(cat "$dev/brightness")
+    notify $(( (cur * 100 + max / 2) / max ))
     exit 0
 fi
 
@@ -40,3 +53,4 @@ fi
 [ "$target" -gt 100 ] && target=100
 [ "$target" -lt "$floor" ] && target=$floor
 echo $(( max * target / 100 )) > "$dev/brightness"
+notify "$target"
