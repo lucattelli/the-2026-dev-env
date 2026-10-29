@@ -19,4 +19,4 @@ KEYBOARD_VARIANT=""
 # 2560x1600 on 13.4" (~225 PPI). X11 assumes 96; 120 (125%) reads well.
 SCREEN_DPI=120
 # Alacritty doesn't grow enough with Xft.dpi alone; 8 elsewhere.
-TERMINAL_FONT_SIZE=11
+TERMINAL_FONT_SIZE=12
