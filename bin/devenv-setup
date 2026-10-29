@@ -289,7 +289,7 @@ EOT
 then sudo udevadm control --reload && sudo udevadm trigger --subsystem-match=backlight --action=add; fi
 id -nG "$USER" | grep -qw video || sudo usermod -aG video "$USER"
 # LXQt ships volume shortcuts but none for brightness. Bind the keys to
-# devenv-brightness (10% steps) in the user's shortcut file, replacing
+# devenv-brightness (3% steps) in the user's shortcut file, replacing
 # any older brightness entries and leaving the rest alone. The file starts
 # as a copy of LXQt's defaults, since an existing user file replaces them.
 ks="$HOME/.config/lxqt/globalkeyshortcuts.conf"
@@ -309,12 +309,12 @@ if ! grep -qx "Exec=$repo/bin/devenv-brightness, up" "$ks" 2>/dev/null; then
     cat >> "$ks.new" << EOT
 
 [XF86MonBrightnessUp.90]
-Comment=Brightness up 10%
+Comment=Brightness up
 Enabled=true
 Exec=$repo/bin/devenv-brightness, up
 
 [XF86MonBrightnessDown.91]
-Comment=Brightness down 10%
+Comment=Brightness down
 Enabled=true
 Exec=$repo/bin/devenv-brightness, down
 EOT
@@ -325,7 +325,7 @@ EOT
         pgrep -x -u "$USER" lxqt-globalkeysd >/dev/null ||
             setsid -f lxqt-globalkeysd >/dev/null 2>&1 < /dev/null
     fi
-    note "brightness keys: devenv-brightness up / down (10% per press)"
+    note "brightness keys: devenv-brightness up / down"
 fi
 
 # ---------------------------------------------------------------------------
