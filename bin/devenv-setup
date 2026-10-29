@@ -119,6 +119,12 @@ fi
 # build against them at install time.
 # shellcheck disable=SC2086
 [ -n "$EXTRA_PACKAGES" ] && apt_install $EXTRA_PACKAGES
+# Packages the profile needs newer than trixie has (e.g. Mesa and firmware
+# for brand-new hardware). Once installed from backports, apt upgrade keeps
+# them on backports.
+# shellcheck disable=SC2086
+[ -n "${BACKPORTS_PACKAGES:-}" ] &&
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -t trixie-backports $BACKPORTS_PACKAGES
 
 if [ -n "${KERNEL_PARAMS:-}" ]; then
     step "Kernel parameters ($KERNEL_PARAMS)"

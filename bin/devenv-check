@@ -13,7 +13,7 @@ repo="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 host="${1:-$(hostname)}"
 profile="$repo/hosts/$host.sh"
 [ -f "$profile" ] || { echo "No profile for '$host' in $repo/hosts/"; exit 1; }
-KERNEL_PARAMS="" EXTRA_PACKAGES=""
+KERNEL_PARAMS="" EXTRA_PACKAGES="" BACKPORTS_PACKAGES=""
 . "$profile"
 
 # Same PATH a new login shell gets, so this works from any terminal.
@@ -45,6 +45,9 @@ check "APT sources with backports" 'grep -q trixie-backports /etc/apt/sources.li
 check "firmware-linux-nonfree" 'dpkg -s firmware-linux-nonfree'
 for p in $EXTRA_PACKAGES; do
     check "package $p" 'dpkg -s "$p"'
+done
+for p in $BACKPORTS_PACKAGES; do
+    check "package $p (from backports if there)" 'dpkg -s "$p"'
 done
 case " $EXTRA_PACKAGES " in *" broadcom-sta-dkms "*)
     check "Broadcom Wi-Fi driver loaded (wl)" 'lsmod | grep -q "^wl "' ;;
