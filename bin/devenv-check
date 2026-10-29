@@ -63,7 +63,7 @@ if [ -n "${DISPLAY:-}" ]; then
 fi
 check "Bluetooth not blocked" '! rfkill list bluetooth | grep -q "Soft blocked: yes"'
 check "Vial udev rule" '[ -f /etc/udev/rules.d/99-vial.rules ]'
-check "brightness keys (LXQt shortcuts)" 'grep -q "^\[XF86MonBrightnessUp\." ~/.config/lxqt/globalkeyshortcuts.conf && grep -q "^\[XF86MonBrightnessDown\." ~/.config/lxqt/globalkeyshortcuts.conf'
+check "brightness keys (LXQt shortcuts)" 'grep -qx "Exec=$repo/bin/devenv-brightness, up" ~/.config/lxqt/globalkeyshortcuts.conf && grep -qx "Exec=$repo/bin/devenv-brightness, down" ~/.config/lxqt/globalkeyshortcuts.conf'
 check "Timeshift configured" '[ -f /etc/timeshift/timeshift.json ]'
 if [ -n "${TIMESHIFT_LABEL:-}" ]; then
     manual "Timeshift on the disk labelled $TIMESHIFT_LABEL" '[ "$(jq -r .backup_device_uuid /etc/timeshift/timeshift.json)" = "$(lsblk -nro UUID,LABEL | awk -v l="$TIMESHIFT_LABEL" "\$2 == l { print \$1; exit }")" ]'

@@ -1,0 +1,17 @@
+#!/bin/sh
+# Screen brightness in bigger steps than lxqt-config-brightness's 2%.
+# Bound to the brightness keys by devenv-setup.
+#   devenv-brightness up|down [steps]   (default 5 steps = 10%)
+# lxqt-config-brightness does the actual change (no root needed) and stops
+# at 5%, so the screen never goes fully dark.
+set -e
+case "${1:-}" in
+    up)   flag=-i ;;
+    down) flag=-d ;;
+    *)    echo "usage: devenv-brightness up|down [steps]"; exit 1 ;;
+esac
+n="${2:-5}"
+while [ "$n" -gt 0 ]; do
+    lxqt-config-brightness "$flag"
+    n=$((n - 1))
+done
