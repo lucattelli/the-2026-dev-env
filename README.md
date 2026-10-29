@@ -130,6 +130,9 @@ Set by `devenv-setup` on every machine:
   as `~/.XCompose`) changes it to `ç`. Applies from the next login.
 - HiDPI screens: a profile can set `SCREEN_DPI` (XPS: 120, i.e. 125%); the
   setup writes `Xft.dpi` to `~/.Xresources`. X11 assumes 96 otherwise.
+  Alacritty's font size is per machine too: `TERMINAL_FONT_SIZE` (default
+  8; XPS 11), written to `~/.config/alacritty-host.toml`, which
+  `alacritty.toml` imports.
 - A profile can override the keyboard with `KEYBOARD_MODEL`,
   `KEYBOARD_LAYOUT` and `KEYBOARD_VARIANT` (empty = the layout's default).
   The Inspiron and the XPS have ABNT2 keyboards: `abnt2`, `br`, default variant.

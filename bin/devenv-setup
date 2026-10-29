@@ -295,6 +295,15 @@ link "$repo/nvim" "$HOME/.config/nvim"
 link "$repo/tmux" "$HOME/.config/tmux"
 link "$repo/mise" "$HOME/.config/mise"
 link "$repo/alacritty" "$HOME/.config/alacritty"
+# Alacritty's per-machine file (imported by alacritty.toml): font size from
+# the profile, 8 by default (sized for the 15.6" 1080p screens).
+want="# Written by devenv-setup from hosts/$host.sh (TERMINAL_FONT_SIZE).
+[font]
+size = ${TERMINAL_FONT_SIZE:-8}"
+if [ "$(cat "$HOME/.config/alacritty-host.toml" 2>/dev/null)" != "$want" ]; then
+    printf '%s\n' "$want" > "$HOME/.config/alacritty-host.toml"
+    note "alacritty: font size ${TERMINAL_FONT_SIZE:-8}"
+fi
 link "$repo/lxqt" "$HOME/.config/lxqt"
 link "$repo/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
 link "$repo/claude/CLAUDE.md" "$HOME/.codex/AGENTS.md"

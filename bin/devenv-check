@@ -115,6 +115,7 @@ for l in "${!targets[@]}"; do
     check "${l/#$HOME/\~} -> repo" '[ "$(readlink "$l")" = "$repo/${targets[$l]}" ]'
 done
 check "~/.bashrc sources the repo bashrc" 'grep -qF "$repo/bash/bashrc" ~/.bashrc'
+check "alacritty font size ${TERMINAL_FONT_SIZE:-8}" 'grep -qx "size = ${TERMINAL_FONT_SIZE:-8}" ~/.config/alacritty-host.toml'
 if [ -n "${SCREEN_DPI:-}" ]; then
     check "screen DPI $SCREEN_DPI in ~/.Xresources" 'grep -qx "Xft.dpi: $SCREEN_DPI" ~/.Xresources'
     [ -n "${DISPLAY:-}" ] && check "screen DPI $SCREEN_DPI active in X" 'xrdb -query | grep -qx "Xft.dpi:[[:space:]]*$SCREEN_DPI"'
