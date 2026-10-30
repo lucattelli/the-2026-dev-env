@@ -146,6 +146,8 @@ if [ -n "${SOF_BIN_VERSION:-}" ]; then
         sudo rm -rf "$sof_dest"/sof*
         (cd "$tmp/sof-bin-$SOF_BIN_VERSION" &&
             sudo FW_DEST="$sof_dest" TOOLS_DEST="$tmp/tools" ./install.sh)
+        # install.sh copies with rsync -a, keeping the tarball's owner (uid 1000).
+        sudo chown -R root:root "$sof_dest"
         echo "$SOF_BIN_VERSION" | sudo tee "$sof_dest/.sof-bin-version" >/dev/null
         rm -rf "$tmp"
         note "installed into $sof_dest (loads at the next boot)"
