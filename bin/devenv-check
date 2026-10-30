@@ -13,7 +13,7 @@ repo="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 host="${1:-$(hostname)}"
 profile="$repo/hosts/$host.sh"
 [ -f "$profile" ] || { echo "No profile for '$host' in $repo/hosts/"; exit 1; }
-KERNEL_PARAMS="" EXTRA_PACKAGES="" BACKPORTS_PACKAGES=""
+KERNEL_PARAMS="" EXTRA_PACKAGES="" BACKPORTS_PACKAGES="" SOF_BIN_VERSION=""
 . "$profile"
 
 # Same PATH a new login shell gets, so this works from any terminal.
@@ -63,6 +63,8 @@ if [ -n "${DISPLAY:-}" ]; then
 fi
 check "Bluetooth not blocked" '! rfkill list bluetooth | grep -q "Soft blocked: yes"'
 check "Vial udev rule" '[ -f /etc/udev/rules.d/99-vial.rules ]'
+check "sound card detected" '[ -r /proc/asound/cards ] && ! grep -q "no soundcards" /proc/asound/cards'
+[ -n "$SOF_BIN_VERSION" ] && check "sound firmware sof-bin $SOF_BIN_VERSION" '[ "$(cat /lib/firmware/updates/intel/.sof-bin-version 2>/dev/null)" = "$SOF_BIN_VERSION" ]'
 # The daemon saves its shortcuts to this file.
 ks=~/.config/lxqt/globalkeyshortcuts.conf
 check "brightness keys (LXQt shortcuts)" 'grep -qx "Exec=$repo/bin/devenv-brightness, up" $ks && grep -qx "Exec=$repo/bin/devenv-brightness, down" $ks'

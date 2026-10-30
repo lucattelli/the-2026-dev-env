@@ -126,6 +126,33 @@ fi
 [ -n "${BACKPORTS_PACKAGES:-}" ] &&
     sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -t trixie-backports $BACKPORTS_PACKAGES
 
+# Sound firmware newer than Debian ships (Sound Open Firmware for brand-new
+# Intel platforms). Installed from the upstream sof-bin release into
+# /lib/firmware/updates, which the kernel searches before /lib/firmware, so
+# Debian's firmware-sof-signed stays untouched. The tarball is checked
+# against the SHA-256 pinned in the profile.
+if [ -n "${SOF_BIN_VERSION:-}" ]; then
+    sof_dest=/lib/firmware/updates/intel
+    if [ "$(cat "$sof_dest/.sof-bin-version" 2>/dev/null)" != "$SOF_BIN_VERSION" ]; then
+        step "Sound firmware (sof-bin $SOF_BIN_VERSION)"
+        apt_install rsync
+        tmp="$(mktemp -d)"
+        curl -fsSL -o "$tmp/sof-bin.tar.gz" \
+            "https://github.com/thesofproject/sof-bin/releases/download/v$SOF_BIN_VERSION/sof-bin-$SOF_BIN_VERSION.tar.gz"
+        echo "$SOF_BIN_SHA256  $tmp/sof-bin.tar.gz" | sha256sum -c --quiet
+        tar -xzf "$tmp/sof-bin.tar.gz" -C "$tmp"
+        sudo install -d "$sof_dest"
+        # Replace older sof* folders from a previous version.
+        sudo rm -rf "$sof_dest"/sof*
+        (cd "$tmp/sof-bin-$SOF_BIN_VERSION" &&
+            sudo FW_DEST="$sof_dest" TOOLS_DEST="$tmp/tools" ./install.sh)
+        echo "$SOF_BIN_VERSION" | sudo tee "$sof_dest/.sof-bin-version" >/dev/null
+        rm -rf "$tmp"
+        note "installed into $sof_dest (loads at the next boot)"
+        sound_fw_changed=yes
+    fi
+fi
+
 if [ -n "${KERNEL_PARAMS:-}" ]; then
     step "Kernel parameters ($KERNEL_PARAMS)"
     sudo install -d /etc/default/grub.d
@@ -498,6 +525,7 @@ for g in sudo docker video; do
     fi
 done
 [ "${session_changed:-}" = yes ] && reasons+=("locale and keyboard")
+[ "${sound_fw_changed:-}" = yes ] && reasons+=("sound firmware")
 [ "${mok_imported:-}" = yes ] && reasons+=("Secure Boot key: on the blue MOK screen pick Enroll MOK -> Continue -> type the password")
 
 pending=()

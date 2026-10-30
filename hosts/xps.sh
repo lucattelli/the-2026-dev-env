@@ -10,7 +10,7 @@ LOCAL_AI=no
 DOCKER_ON_DEMAND=no
 ZRAM=no
 EXTRA_PACKAGES=""
-BACKPORTS_PACKAGES="libgl1-mesa-dri libglx-mesa0 libegl-mesa0 libgbm1 mesa-vulkan-drivers mesa-va-drivers firmware-intel-graphics firmware-iwlwifi firmware-sof-signed"
+BACKPORTS_PACKAGES="libgl1-mesa-dri libglx-mesa0 libegl-mesa0 libgbm1 mesa-vulkan-drivers mesa-va-drivers firmware-intel-graphics firmware-iwlwifi firmware-cirrus alsa-ucm-conf"
 KERNEL_PARAMS=""
 # Brazilian ABNT2 keyboard.
 KEYBOARD_MODEL=abnt2
@@ -20,3 +20,9 @@ KEYBOARD_VARIANT=""
 SCREEN_DPI=120
 # Alacritty doesn't grow enough with Xft.dpi alone; 8 elsewhere.
 TERMINAL_FONT_SIZE=12
+# Sound: Panther Lake's audio DSP needs Sound Open Firmware newer than
+# Debian's firmware-sof-signed 2025.01 (no ptl/ files), so it comes from the
+# upstream release. The codec is a Cirrus CS42L43 on SoundWire, with Cirrus
+# amps (firmware-cirrus above).
+SOF_BIN_VERSION=2026.09.2
+SOF_BIN_SHA256=5f7bc30b2b5c1e6b0da55a33fc44e2b7f56ae9b06952edcde614f51ef6b943e1
