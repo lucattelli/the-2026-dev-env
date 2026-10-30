@@ -16,6 +16,9 @@ fi
 step "APT (Debian, Docker, NVIDIA toolkit)"
 sudo apt update
 sudo apt full-upgrade
+# Old kernels and leftover dependencies. Debian always keeps the running
+# kernel and the newest ones, so a fallback stays in GRUB.
+sudo apt autoremove --purge
 
 if has flatpak; then
     step "Flatpak"

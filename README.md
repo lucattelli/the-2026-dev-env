@@ -858,7 +858,8 @@ mise use -g npm:@bitwarden/cli
 in order, and stops at the first error:
 
 1. Timeshift snapshot
-2. APT (Debian plus the Docker and NVIDIA repos)
+2. APT (Debian plus the Docker and NVIDIA repos), then `autoremove` for
+   old kernels and leftover dependencies
 3. Flatpak
 4. mise itself and its tools, within their pinned ranges
 5. uv itself and uv tools (`llm`)
