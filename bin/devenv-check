@@ -137,6 +137,7 @@ check "git name and email" 'git config --global user.name && git config --global
 check "git signs commits with SSH" '[ "$(git config --global gpg.format)" = ssh ] && [ "$(git config --global commit.gpgsign)" = true ]'
 manual "SSH key restored (devenv-keys)" '[ -f ~/.ssh/id_ed25519 ] && [ -f ~/.ssh/id_ed25519.pub ]'
 check "ssh adds keys to the agent" 'grep -qi "^AddKeysToAgent yes" ~/.ssh/config'
+[ -f ~/.ssh/id_rsa_tildeclub ] && check "ssh config for tilde.club" 'grep -qi "^Host tilde\.club" ~/.ssh/config'
 # Not BatchMode: a key with a passphrase that isn't in the agent yet would
 # fail. This may ask for the passphrase once (then the agent keeps it).
 manual "GitHub accepts the SSH key" 'ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new -T git@github.com 2>&1 | grep -q "successfully authenticated"'
