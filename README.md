@@ -159,7 +159,7 @@ on every machine.
 | `l5i` | Lenovo Legion 5 (RTX 2060) | stable | Debian 550 | discrete mode, local AI |
 | `insp` | Dell Inspiron 7580 (MX150) | stable | Debian 550 | hybrid, `prime-run` |
 | `mba` | MacBook Air 11" 2014 (4 GB) | stable | none | Broadcom Wi-Fi, zram, Docker on demand, `intel_iommu=off` |
-| `t1g` | ThinkPad T1g (RTX 5070) | backports | NVIDIA repo (590+) | hybrid, local AI; untested |
+| `t1g` | ThinkPad T1g (RTX 5070) | backports | NVIDIA repo (590+) | hybrid, local AI, sound firmware from sof-bin; untested |
 | `xps` | Dell XPS 13 2026 (Ultra 7 355) | backports | none | Mesa and firmware from backports, sound firmware from sof-bin, ABNT2, 125% scale, text-mode first boot |
 
 Why two kernel tracks: older machines are fully supported by Debian's 6.12
