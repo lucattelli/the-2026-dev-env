@@ -256,6 +256,9 @@ once. Keys live in a Bitwarden folder named `ssh`, as secure notes:
 
 - Item name: `<hostname>-<purpose>` for one machine (`l5i-github`), or
   `all-<purpose>` for every machine (`all-tilde`).
+  The tilde.club key is `all-tilde`, with fields `id_rsa_tildeclub` and
+  `id_rsa_tildeclub.pub`; where it exists, `devenv-setup` adds a
+  `Host tilde.club` entry to `~/.ssh/config` so `ssh tilde.club` just works.
 - One hidden field per file in `~/.ssh`: the field name is the file name
   (`id_ed25519`, `id_ed25519.pub`), the value is the file content. Field
   names must be unique across a machine's items.

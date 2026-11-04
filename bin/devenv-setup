@@ -499,6 +499,18 @@ if [ -f "$HOME/.ssh/id_ed25519" ] && [[ "$origin" == https://github.com/* ]]; th
     git -C "$repo" remote set-url origin git@github.com:lucattelli/the-2026-dev-env.git
     note "repo remote switched to SSH"
 fi
+# tilde.club: its key has its own name (Bitwarden item all-tilde), so ssh
+# needs to be told to use it. Added only on machines that have the key.
+if [ -f "$HOME/.ssh/id_rsa_tildeclub" ] && ! grep -qi '^Host tilde\.club' "$HOME/.ssh/config" 2>/dev/null; then
+    cat >> "$HOME/.ssh/config" << 'EOT'
+
+Host tilde.club
+    User lucattelli
+    IdentityFile ~/.ssh/id_rsa_tildeclub
+EOT
+    chmod 600 "$HOME/.ssh/config"
+    note "ssh: tilde.club uses ~/.ssh/id_rsa_tildeclub"
+fi
 if ! mise_exec gh auth status >/dev/null 2>&1; then
     if ask "Log in to the GitHub CLI now (opens the browser)?"; then
         mise_exec gh auth login --hostname github.com --git-protocol ssh --skip-ssh-key --web ||
