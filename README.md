@@ -140,10 +140,10 @@ Set by `devenv-setup` on every machine:
   `globalkeyshortcuts.conf` by hand doesn't reach panel actions. It needs
   the desktop session, so after a text-console setup run it from a desktop
   terminal (the setup lists it).
-- HiDPI screens: a profile can set `SCREEN_DPI` (XPS: 120, i.e. 125%); the
+- HiDPI screens: a profile can set `SCREEN_DPI` (XPS: 120, i.e. 125%; T1g: 192, i.e. 200%); the
   setup writes `Xft.dpi` to `~/.Xresources`. X11 assumes 96 otherwise.
   Alacritty's font size is per machine too: `TERMINAL_FONT_SIZE` (default
-  8; XPS 12), written to `~/.config/alacritty-host.toml`, which
+  8; XPS 12, T1g 14), written to `~/.config/alacritty-host.toml`, which
   `alacritty.toml` imports.
 - A profile can override the keyboard with `KEYBOARD_MODEL`,
   `KEYBOARD_LAYOUT` and `KEYBOARD_VARIANT` (empty = the layout's default).
@@ -159,7 +159,7 @@ on every machine.
 | `l5i` | Lenovo Legion 5 (RTX 2060) | stable | Debian 550 | discrete mode, local AI |
 | `insp` | Dell Inspiron 7580 (MX150) | stable | Debian 550 | hybrid, `prime-run` |
 | `mba` | MacBook Air 11" 2014 (4 GB) | stable | none | Broadcom Wi-Fi, zram, Docker on demand, `intel_iommu=off` |
-| `t1g` | ThinkPad T1g (RTX 5070) | backports | NVIDIA repo (590+) | hybrid, local AI, sound firmware from sof-bin; untested |
+| `t1g` | ThinkPad T1g (RTX 5070) | backports | NVIDIA repo (590+) | hybrid, local AI, sound firmware from sof-bin, 200% scale |
 | `xps` | Dell XPS 13 2026 (Ultra 7 355) | backports | none | Mesa and firmware from backports, sound firmware from sof-bin, ABNT2, 125% scale, text-mode first boot |
 
 Why two kernel tracks: older machines are fully supported by Debian's 6.12
