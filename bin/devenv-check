@@ -105,6 +105,10 @@ for c in libreoffice thunderbird chromium flatpak timeshift; do
     check "$c" 'command -v "$c"'
 done
 check "Bitwarden desktop (Flatpak)" 'flatpak info com.bitwarden.desktop'
+if [ "${DROPBOX:-yes}" = yes ]; then
+    check "Dropbox (Flatpak)" 'flatpak info com.dropbox.Client'
+    manual "Dropbox signed in (~/Dropbox)" '[ -d ~/Dropbox ]'
+fi
 
 section "Tools"
 for c in git rg fdfind fzf batcat tmux jq xclip mise uv rustup cargo rust-analyzer \

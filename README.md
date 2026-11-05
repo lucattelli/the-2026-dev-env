@@ -846,6 +846,11 @@ flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.f
 flatpak install flathub com.bitwarden.desktop
 ```
 
+Dropbox also comes from Flathub (`com.dropbox.Client`); `devenv-setup`
+installs it on every machine unless the profile sets `DROPBOX=no`. Open it
+from the menu once to sign in; it starts at every login after that and
+syncs into `~/Dropbox`.
+
 Also install the Bitwarden browser extension for filling in passwords.
 Optionally, the CLI (`bw`) reads secrets from the shell, e.g.
 `export API_KEY=$(bw get password my-api)`:

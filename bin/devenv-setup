@@ -306,6 +306,10 @@ step "Default terminal, Bluetooth, Flatpak apps"
 sudo rfkill unblock bluetooth || true
 sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 sudo flatpak install -y --noninteractive flathub com.bitwarden.desktop
+# Dropbox: Flathub package (Dropbox ships no Debian repo of its own).
+# A profile can turn it off with DROPBOX=no (it keeps a few hundred MB of
+# RAM busy, which the 4 GB MacBook Air may not want).
+[ "${DROPBOX:-yes}" = yes ] && sudo flatpak install -y --noninteractive flathub com.dropbox.Client
 
 step "Brightness and Windows keys (LXQt shortcuts)"
 # notify-send shows the new level on screen, like the volume keys.
@@ -575,6 +579,9 @@ pending+=("${todo[@]}")
 mise_exec gh auth status >/dev/null 2>&1 || pending+=("Log in to the GitHub CLI: gh auth login")
 [ -f "$HOME/.claude/.credentials.json" ] || pending+=("Log in to Claude Code: claude")
 [ -f "$HOME/.codex/auth.json" ] || pending+=("Log in to Codex: codex")
+if [ "${DROPBOX:-yes}" = yes ] && [ ! -d "$HOME/Dropbox" ]; then
+    pending+=("Dropbox: open it from the menu and sign in (it then starts at every login).")
+fi
 [ -n "$(find "$HOME/.local/share/nvim/site/pack" -mindepth 3 -maxdepth 3 2>/dev/null)" ] ||
     pending+=("Open nvim once to install plugins and language servers.")
 
