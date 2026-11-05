@@ -376,9 +376,10 @@ grep -qF "$repo/bash/bashrc" "$HOME/.bashrc" 2>/dev/null || {
 }
 
 step "Tools pinned in mise/config.toml"
-# Node first: the npm: tools (Codex, Bitwarden CLI) need it.
+# Node first: the npm: tools (Codex, Bitwarden CLI) install with its npm
+# (settings.npm in mise/config.toml), which must be on PATH for that.
 "$HOME/.local/bin/mise" install node
-"$HOME/.local/bin/mise" install
+"$HOME/.local/bin/mise" exec node -- "$HOME/.local/bin/mise" install
 
 step "Git"
 # The LXQt session runs an ssh-agent; this asks for the key passphrase once

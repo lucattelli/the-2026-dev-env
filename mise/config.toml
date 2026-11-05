@@ -14,3 +14,9 @@ node = "lts"
 starship = "latest"
 tealdeer = "latest"
 zoxide = "latest"
+
+[settings.npm]
+# npm: tools install with npm itself. mise's default embedded installer
+# (aube, new in 2026.11) failed on the T1g with "failed to resolve
+# dependencies" for @bitwarden/cli.
+package_manager = "npm"
