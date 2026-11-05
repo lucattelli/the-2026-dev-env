@@ -25,4 +25,4 @@ SOF_BIN_SHA256=5f7bc30b2b5c1e6b0da55a33fc44e2b7f56ae9b06952edcde614f51ef6b943e1
 # 3840x2400 on 16" (~283 PPI). X11 assumes 96; 168 (175%) reads well.
 SCREEN_DPI=168
 # Alacritty doesn't grow enough with Xft.dpi alone; 8 elsewhere.
-TERMINAL_FONT_SIZE=14
+TERMINAL_FONT_SIZE=12

@@ -144,7 +144,7 @@ Set by `devenv-setup` on every machine:
   setup writes `Xft.dpi` to `~/.Xresources`, and the same scale for the
   login screen to `/etc/sddm.conf.d/devenv-hidpi.conf`. X11 assumes 96 otherwise.
   Alacritty's font size is per machine too: `TERMINAL_FONT_SIZE` (default
-  8; XPS 12, T1g 14), written to `~/.config/alacritty-host.toml`, which
+  8; XPS and T1g 12), written to `~/.config/alacritty-host.toml`, which
   `alacritty.toml` imports.
 - A profile can override the keyboard with `KEYBOARD_MODEL`,
   `KEYBOARD_LAYOUT` and `KEYBOARD_VARIANT` (empty = the layout's default).
