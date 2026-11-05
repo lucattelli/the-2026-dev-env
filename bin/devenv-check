@@ -101,7 +101,8 @@ fi
 
 section "Apps"
 check "Alacritty is the default terminal" 'update-alternatives --query x-terminal-emulator | grep -q "^Value: .*alacritty"'
-for c in libreoffice thunderbird chromium flatpak timeshift; do
+check "Firefox is the default browser" '[ "$(xdg-settings get default-web-browser)" = firefox-esr.desktop ] && update-alternatives --query x-www-browser | grep -q "^Value: .*firefox-esr"'
+for c in libreoffice thunderbird firefox-esr chromium flatpak timeshift; do
     check "$c" 'command -v "$c"'
 done
 check "Bitwarden desktop (Flatpak)" 'flatpak info com.bitwarden.desktop'
