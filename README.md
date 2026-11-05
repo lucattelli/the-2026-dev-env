@@ -141,7 +141,8 @@ Set by `devenv-setup` on every machine:
   the desktop session, so after a text-console setup run it from a desktop
   terminal (the setup lists it).
 - HiDPI screens: a profile can set `SCREEN_DPI` (XPS: 120, i.e. 125%; T1g: 192, i.e. 200%); the
-  setup writes `Xft.dpi` to `~/.Xresources`. X11 assumes 96 otherwise.
+  setup writes `Xft.dpi` to `~/.Xresources`, and the same scale for the
+  login screen to `/etc/sddm.conf.d/devenv-hidpi.conf`. X11 assumes 96 otherwise.
   Alacritty's font size is per machine too: `TERMINAL_FONT_SIZE` (default
   8; XPS 12, T1g 14), written to `~/.config/alacritty-host.toml`, which
   `alacritty.toml` imports.
