@@ -104,7 +104,7 @@ apt_install build-essential git curl wget pkg-config libssl-dev ca-certificates 
     fwupd unattended-upgrades timeshift flatpak rfkill blueman power-profiles-daemon \
     alacritty fonts-jetbrains-mono libfuse2t64 \
     libreoffice libreoffice-l10n-pt-br hunspell-pt-br \
-    thunderbird thunderbird-l10n-pt-br chromium chromium-l10n
+    thunderbird thunderbird-l10n-pt-br firefox-esr firefox-esr-l10n-pt-br chromium chromium-l10n
 [ "$ZRAM" = yes ] && apt_install zram-tools
 
 step "Kernel and firmware ($KERNEL)"
@@ -303,6 +303,12 @@ then sudo udevadm control --reload && sudo udevadm trigger; fi
 
 step "Default terminal, Bluetooth, Flatpak apps"
 [ -x /usr/bin/alacritty ] && sudo update-alternatives --set x-terminal-emulator /usr/bin/alacritty
+# Firefox is the default browser: for links opened by apps (xdg-settings,
+# per user) and for x-www-browser (system). Chromium stays as a second one.
+sudo update-alternatives --set x-www-browser /usr/bin/firefox-esr
+if [ "$(xdg-settings get default-web-browser 2>/dev/null)" != firefox-esr.desktop ]; then
+    xdg-settings set default-web-browser firefox-esr.desktop && note "default browser: Firefox"
+fi
 sudo rfkill unblock bluetooth || true
 sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 sudo flatpak install -y --noninteractive flathub com.bitwarden.desktop

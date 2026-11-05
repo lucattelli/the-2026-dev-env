@@ -834,8 +834,12 @@ browser for WebHID tools such as vial.rocks.
 
 ```sh
 sudo apt install libreoffice libreoffice-l10n-pt-br hunspell-pt-br \
-  thunderbird thunderbird-l10n-pt-br chromium chromium-l10n
+  thunderbird thunderbird-l10n-pt-br firefox-esr firefox-esr-l10n-pt-br \
+  chromium chromium-l10n
 ```
+
+Firefox is the default browser (`xdg-settings` for links opened by apps,
+`x-www-browser` for the rest); Chromium stays installed as a second one.
 
 Bitwarden isn't in the Debian repos; install it from Flathub. Set up
 Flatpak once, then log out and back in so its apps show up in the menu:
