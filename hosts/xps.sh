@@ -16,8 +16,8 @@ KERNEL_PARAMS=""
 KEYBOARD_MODEL=abnt2
 KEYBOARD_LAYOUT=br
 KEYBOARD_VARIANT=""
-# 2560x1600 on 13.4" (~225 PPI). X11 assumes 96; 120 (125%) reads well.
-SCREEN_DPI=120
+# 2560x1600 on 13.4" (~225 PPI). X11 assumes 96; 144 (150%) reads well.
+SCREEN_DPI=144
 # Alacritty doesn't grow enough with Xft.dpi alone; 8 elsewhere.
 TERMINAL_FONT_SIZE=12
 # Sound: Panther Lake's audio DSP needs Sound Open Firmware newer than
