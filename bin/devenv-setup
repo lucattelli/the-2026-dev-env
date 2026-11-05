@@ -369,6 +369,24 @@ if [ -n "${SCREEN_DPI:-}" ]; then
         note "screen: Xft.dpi $SCREEN_DPI in ~/.Xresources (reopen apps to see it)"
     fi
 fi
+# The login screen (SDDM) runs before ~/.Xresources is read, so it gets the
+# same scale on its own: the X server's DPI and Qt's scale for the greeter.
+sddm_hidpi=/etc/sddm.conf.d/devenv-hidpi.conf
+if [ -n "${SCREEN_DPI:-}" ]; then
+    scale="$(awk -v d="$SCREEN_DPI" 'BEGIN { printf "%g", d / 96 }')"
+    sudo install -d /etc/sddm.conf.d
+    if write_root "$sddm_hidpi" << EOT
+# Written by devenv-setup from hosts/$host.sh (SCREEN_DPI).
+[General]
+GreeterEnvironment=QT_SCREEN_SCALE_FACTORS=$scale,QT_FONT_DPI=$SCREEN_DPI
+
+[X11]
+ServerArguments=-nolisten tcp -dpi $SCREEN_DPI
+EOT
+    then note "login screen: ${scale}x (from the next boot)"; fi
+elif [ -f "$sddm_hidpi" ]; then
+    sudo rm -f "$sddm_hidpi"
+fi
 line="[ -f \"$repo/bash/bashrc\" ] && . \"$repo/bash/bashrc\""
 grep -qF "$repo/bash/bashrc" "$HOME/.bashrc" 2>/dev/null || {
     printf '\n%s\n' "$line" >> "$HOME/.bashrc"

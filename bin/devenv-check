@@ -130,6 +130,7 @@ check "alacritty font size ${TERMINAL_FONT_SIZE:-8}" 'grep -qx "size = ${TERMINA
 if [ -n "${SCREEN_DPI:-}" ]; then
     check "screen DPI $SCREEN_DPI in ~/.Xresources" 'grep -qx "Xft.dpi: $SCREEN_DPI" ~/.Xresources'
     [ -n "${DISPLAY:-}" ] && check "screen DPI $SCREEN_DPI active in X" 'xrdb -query | grep -qx "Xft.dpi:[[:space:]]*$SCREEN_DPI"'
+    check "login screen scaled (SDDM)" 'grep -q -- "-dpi $SCREEN_DPI" /etc/sddm.conf.d/devenv-hidpi.conf'
 fi
 
 section "Git and keys"
