@@ -11,7 +11,12 @@ DOCKER_ON_DEMAND=no
 ZRAM=no
 EXTRA_PACKAGES=""
 BACKPORTS_PACKAGES="libgl1-mesa-dri libglx-mesa0 libegl-mesa0 libgbm1 mesa-vulkan-drivers mesa-va-drivers firmware-intel-graphics firmware-iwlwifi firmware-cirrus alsa-ucm-conf"
-KERNEL_PARAMS=""
+# Panel Replay with selective update (the xe driver's default for this
+# panel) shows brief horizontal strips with another part of the screen.
+# Turning it off falls back to PSR2, which was glitch-free and measured no
+# worse at idle (2.67 W vs 3.17 W with Panel Replay, screen static, battery).
+# xe.enable_psr2_sel_fetch=0 instead made the mouse stutter badly.
+KERNEL_PARAMS="xe.enable_panel_replay=0"
 # Brazilian ABNT2 keyboard.
 KEYBOARD_MODEL=abnt2
 KEYBOARD_LAYOUT=br
