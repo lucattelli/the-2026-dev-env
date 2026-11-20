@@ -2,3 +2,5 @@
 .aider*
 # LXQt: monitor layouts are per machine
 lxqt/lxqt-config-monitor/
+# tmux plugins installed locally by TPM
+tmux/plugins/

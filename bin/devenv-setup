@@ -292,6 +292,14 @@ link "$repo/alacritty" "$HOME/.config/alacritty"
 link "$repo/lxqt" "$HOME/.config/lxqt"
 link "$repo/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
 link "$repo/claude/CLAUDE.md" "$HOME/.codex/AGENTS.md"
+link "$repo/claude/statusline.sh" "$HOME/.claude/statusline.sh"
+# Only the statusLine key: settings.json also holds per-machine state
+# (permissions, hooks) and Claude Code writes to it.
+cs="$HOME/.claude/settings.json"
+[ -f "$cs" ] || echo '{}' > "$cs"
+new_cs="$(jq --arg cmd "bash $HOME/.claude/statusline.sh" \
+    '.statusLine = {type: "command", command: $cmd}' "$cs")"
+[ "$new_cs" = "$(jq . "$cs")" ] || printf '%s\n' "$new_cs" > "$cs"
 # ' + c = ç with the us-intl keyboard (applies from the next login).
 [ "$(readlink "$HOME/.XCompose" 2>/dev/null)" = "$repo/x11/XCompose" ] || session_changed=yes
 link "$repo/x11/XCompose" "$HOME/.XCompose"

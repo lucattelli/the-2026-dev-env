@@ -10,7 +10,7 @@ tmux/        tmux config, no plugin manager
 alacritty/   terminal config
 mise/        global tool versions (Neovim, Node, Go, CLI tools, Codex)
 bash/        shell snippet sourced from ~/.bashrc
-claude/      global CLAUDE.md and sandbox image for Claude Code
+claude/      global CLAUDE.md, status line and sandbox image for Claude Code
 bin/         helper scripts, added to PATH by the bash snippet
 hosts/       per-machine hardware profiles used by devenv-setup
 lxqt/        LXQt settings (panel, shortcuts, power), linked as ~/.config/lxqt
@@ -420,6 +420,18 @@ Link the global `CLAUDE.md`, which tells Claude Code how this machine works
 ```sh
 mkdir -p ~/.claude
 ln -s ~/the-2026-dev-env/claude/CLAUDE.md ~/.claude/CLAUDE.md
+```
+
+Status line (model, directory and git branch with lines +/-, context bar,
+weekly limit with reset time, session cost and duration). `devenv-setup`
+links the script and sets only the `statusLine` key in
+`~/.claude/settings.json`; the rest of that file stays per machine:
+
+```sh
+ln -s ~/the-2026-dev-env/claude/statusline.sh ~/.claude/statusline.sh
+jq --arg cmd "bash $HOME/.claude/statusline.sh" \
+  '.statusLine = {type: "command", command: $cmd}' ~/.claude/settings.json \
+  > /tmp/cs.json && mv /tmp/cs.json ~/.claude/settings.json
 ```
 
 Check with `/memory` inside a session. Claude Code runs commands in a
