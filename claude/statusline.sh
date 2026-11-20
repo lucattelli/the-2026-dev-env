@@ -11,8 +11,6 @@ week_pct=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empt
 week_reset=$(echo "$input" | jq -r '.rate_limits.seven_day.resets_at // empty')
 cost=$(echo "$input" | jq -r '.cost.total_cost_usd // empty')
 duration_ms=$(echo "$input" | jq -r '.cost.total_duration_ms // empty')
-lines_added=$(echo "$input" | jq -r '.cost.total_lines_added // empty')
-lines_removed=$(echo "$input" | jq -r '.cost.total_lines_removed // empty')
 cwd=$(echo "$input" | jq -r '.workspace.current_dir // empty')
 
 RESET=$'\033[0m'; DIM=$'\033[2m'; BOLD=$'\033[1m'
@@ -25,28 +23,23 @@ segments=()
 # --- Model ---
 segments+=("${BOLD}${MAGENTA}🧠 ${model}${RESET}")
 
-# --- Lines added/removed (hidden when both are zero), shown after git branch ---
-lines_seg=""
-if [ -n "$lines_added" ] && [ "$lines_added" != "null" ]; then
-  la=${lines_added:-0}; lr=${lines_removed:-0}
-  if [ "$la" != "0" ] || [ "$lr" != "0" ]; then
-    lines_seg="${GREEN}+${la}${RESET}${DIM}/${RESET}${RED}-${lr}${RESET}"
-  fi
-fi
-
-# --- Directory + git branch (+ lines added/removed) ---
+# --- Directory + git branch + uncommitted changes in the repo ---
+# +added/-removed: tracked changes vs HEAD (staged and unstaged).
+# ?N: untracked files. Both hidden when the working tree is clean.
 if [ -n "$cwd" ] && [ -d "$cwd" ]; then
   dir_seg="${CYAN}📁 $(basename "$cwd")${RESET}"
   branch=$(git -C "$cwd" rev-parse --abbrev-ref HEAD 2>/dev/null)
   if [ -n "$branch" ]; then
-    dirty=""
-    [ -n "$(git -C "$cwd" status --porcelain -uno 2>/dev/null | head -c1)" ] && dirty="${YELLOW}*${RESET}"
-    dir_seg="${dir_seg} ${DIM}⎇${RESET} ${BLUE}${branch}${RESET}${dirty}"
+    dir_seg="${dir_seg} ${DIM}⎇${RESET} ${BLUE}${branch}${RESET}"
+    read -r la lr <<<"$(git -C "$cwd" diff HEAD --numstat 2>/dev/null |
+      awk '{a+=$1; r+=$2} END {print a+0, r+0}')"
+    untracked=$(git -C "$cwd" ls-files --others --exclude-standard 2>/dev/null | wc -l | tr -d ' ')
+    if [ "${la:-0}" != "0" ] || [ "${lr:-0}" != "0" ]; then
+      dir_seg="${dir_seg} ${GREEN}+${la}${RESET}${DIM}/${RESET}${RED}-${lr}${RESET}"
+    fi
+    [ "${untracked:-0}" != "0" ] && dir_seg="${dir_seg} ${YELLOW}?${untracked}${RESET}"
   fi
-  [ -n "$lines_seg" ] && dir_seg="${dir_seg} ${lines_seg}"
   segments+=("$dir_seg")
-elif [ -n "$lines_seg" ]; then
-  segments+=("$lines_seg")
 fi
 
 # --- Context usage: smooth Unicode bar, colored by threshold ---
