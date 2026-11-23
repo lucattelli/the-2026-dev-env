@@ -155,6 +155,23 @@ if [ -n "${SOF_BIN_VERSION:-}" ]; then
     fi
 fi
 
+# Firmware aliases: "alias=target" pairs, both relative to /lib/firmware.
+# Each alias becomes a symlink in /lib/firmware/updates (searched first) to
+# the packaged target, for files a driver asks for under a name no package
+# ships yet. Targets missing from the system are skipped with a note.
+if [ -n "${FIRMWARE_LINKS:-}" ]; then
+    for pair in $FIRMWARE_LINKS; do
+        alias="/lib/firmware/updates/${pair%%=*}" target="/lib/firmware/${pair#*=}"
+        [ -e "$target" ] || { note "firmware link skipped, no $target"; continue; }
+        if [ "$(readlink "$alias" 2>/dev/null)" != "$target" ]; then
+            sudo install -d "$(dirname "$alias")"
+            sudo ln -sfn "$target" "$alias"
+            note "firmware link: ${pair%%=*} -> ${pair#*=}"
+            sound_fw_changed=yes
+        fi
+    done
+fi
+
 if [ -n "${KERNEL_PARAMS:-}" ]; then
     step "Kernel parameters ($KERNEL_PARAMS)"
     sudo install -d /etc/default/grub.d
