@@ -153,6 +153,7 @@ manual "GitHub accepts the SSH key" 'ssh -o ConnectTimeout=5 -o StrictHostKeyChe
 manual "repo remote uses SSH" 'git -C "$repo" remote get-url origin | grep -q "^git@github.com:"'
 manual "gh logged in" 'gh auth status'
 manual "Claude Code logged in" '[ -f ~/.claude/.credentials.json ]'
+check "Claude Code: brl plugin enabled" 'jq -e ".extraKnownMarketplaces.brl and .enabledPlugins[\"brl@brl\"]" ~/.claude/settings.json'
 manual "Codex logged in" '[ -f ~/.codex/auth.json ]'
 manual "nvim plugins installed" '[ -n "$(find ~/.local/share/nvim/site/pack -mindepth 3 -maxdepth 3 2>/dev/null)" ]'
 

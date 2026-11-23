@@ -11,6 +11,7 @@ alacritty/   terminal config
 mise/        global tool versions (Neovim, Node, Go, CLI tools, Codex)
 bash/        shell snippet sourced from ~/.bashrc
 claude/      global CLAUDE.md, status line and sandbox image for Claude Code
+             (plus the brl plugin marketplace, set in ~/.claude/settings.json)
 bin/         helper scripts, added to PATH by the bash snippet
 hosts/       per-machine hardware profiles used by devenv-setup
 lxqt/        LXQt settings (panel, shortcuts, power), linked as ~/.config/lxqt
