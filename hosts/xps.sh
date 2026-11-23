@@ -31,3 +31,14 @@ TERMINAL_FONT_SIZE=12
 # amps (firmware-cirrus above).
 SOF_BIN_VERSION=2026.09.2
 SOF_BIN_SHA256=5f7bc30b2b5c1e6b0da55a33fc44e2b7f56ae9b06952edcde614f51ef6b943e1
+# Speakers: the two CS35L56 amps (on SPI) need Dell's tuning files, and the
+# kernel (7.3) can't read the speaker ID from this machine's ACPI, so it
+# asks for "spkid0", which doesn't exist; firmware-cirrus ships 10280e54
+# tuning for spkid1-3 only. Pointing spkid0 at spkid1 gives "Calibration
+# applied" on both amps and working speakers (tested 2026-11). Drop this
+# once the kernel reads the real ID (dmesg then names spkid1/2/3 itself).
+FIRMWARE_LINKS="
+cirrus/cs35l56-b2-dsp1-misc-10280e54-spkid0.wmfw=cirrus/cs35l56-b2-dsp1-misc-10280e54-spkid1.wmfw
+cirrus/cs35l56-b2-dsp1-misc-10280e54-spkid0-ampl.bin=cirrus/cs35l56-b2-dsp1-misc-10280e54-spkid1-ampl.bin
+cirrus/cs35l56-b2-dsp1-misc-10280e54-spkid0-ampr.bin=cirrus/cs35l56-b2-dsp1-misc-10280e54-spkid1-ampr.bin
+"
